@@ -233,6 +233,13 @@ func startInProcess(ctx *Context, clientCtx client.Context, appCreator types.App
 		return err
 	}
 
+	config := config.GetConfig(ctx.Viper)
+	if err := config.ValidateBasic(); err != nil {
+		ctx.Logger.Error("WARNING: The minimum-gas-prices config in app.toml is set to the empty string. " +
+			"This defaults to 0 in the current version, but will error in the next version " +
+			"(SDK v0.44). Please explicitly put the desired minimum-gas-prices in your app.toml.")
+	}
+
 	app := appCreator(ctx.Logger, db, traceWriter, ctx.Viper)
 
 	nodeKey, err := p2p.LoadOrGenNodeKey(cfg.NodeKeyFile())
@@ -260,8 +267,6 @@ func startInProcess(ctx *Context, clientCtx client.Context, appCreator types.App
 		return err
 	}
 	ctx.Logger.Debug("initialization: tmNode started")
-
-	config := config.GetConfig(ctx.Viper)
 
 	// Add the tx service to the gRPC router. We only need to register this
 	// service if API or gRPC is enabled, and avoid doing so in the general
