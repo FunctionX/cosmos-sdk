@@ -124,9 +124,6 @@ func validateInflationRateChange(i interface{}) error {
 	if v.IsNegative() {
 		return fmt.Errorf("inflation rate change cannot be negative: %s", v)
 	}
-	if v.GT(sdk.OneDec()) {
-		return fmt.Errorf("inflation rate change too large: %s", v)
-	}
 
 	return nil
 }
@@ -140,9 +137,6 @@ func validateInflationMax(i interface{}) error {
 	if v.IsNegative() {
 		return fmt.Errorf("max inflation cannot be negative: %s", v)
 	}
-	if v.GT(sdk.OneDec()) {
-		return fmt.Errorf("max inflation too large: %s", v)
-	}
 
 	return nil
 }
@@ -155,9 +149,6 @@ func validateInflationMin(i interface{}) error {
 
 	if v.IsNegative() {
 		return fmt.Errorf("min inflation cannot be negative: %s", v)
-	}
-	if v.GT(sdk.OneDec()) {
-		return fmt.Errorf("min inflation too large: %s", v)
 	}
 
 	return nil
