@@ -51,56 +51,20 @@ func (ctx Context) Invoke(grpcCtx gocontext.Context, method string, req, reply i
 	}
 
 	// Case 2. Querying state.
-	inMd, _ := metadata.FromOutgoingContext(grpcCtx)
-	abciRes, outMd, err := RunGRPCQuery(ctx, grpcCtx, method, req, inMd)
-	if err != nil {
-		return err
-	}
-
-	err = protoCodec.Unmarshal(abciRes.Value, reply)
-	if err != nil {
-		return err
-	}
-
-	for _, callOpt := range opts {
-		header, ok := callOpt.(grpc.HeaderCallOption)
-		if !ok {
-			continue
-		}
-
-		*header.HeaderAddr = outMd
-	}
-
-	if ctx.InterfaceRegistry != nil {
-		return types.UnpackInterfaces(reply, ctx.InterfaceRegistry)
-	}
-
-	return nil
-}
-
-// NewStream implements the grpc ClientConn.NewStream method
-func (Context) NewStream(gocontext.Context, *grpc.StreamDesc, string, ...grpc.CallOption) (grpc.ClientStream, error) {
-	return nil, fmt.Errorf("streaming rpc not supported")
-}
-
-// RunGRPCQuery runs a gRPC query from the clientCtx, given all necessary
-// arguments for the gRPC method, and returns the ABCI response. It is used
-// to factorize code between client (Invoke) and server (RegisterGRPCServer)
-// gRPC handlers.
-func RunGRPCQuery(ctx Context, grpcCtx gocontext.Context, method string, req interface{}, md metadata.MD) (abci.ResponseQuery, metadata.MD, error) {
 	reqBz, err := protoCodec.Marshal(req)
 	if err != nil {
-		return abci.ResponseQuery{}, nil, err
+		return err
 	}
 
 	// parse height header
+	md, _ := metadata.FromOutgoingContext(grpcCtx)
 	if heights := md.Get(grpctypes.GRPCBlockHeightHeader); len(heights) > 0 {
 		height, err := strconv.ParseInt(heights[0], 10, 64)
 		if err != nil {
-			return abci.ResponseQuery{}, nil, err
+			return err
 		}
 		if height < 0 {
-			return abci.ResponseQuery{}, nil, sdkerrors.Wrapf(
+			return sdkerrors.Wrapf(
 				sdkerrors.ErrInvalidRequest,
 				"client.Context.Invoke: height (%d) from %q must be >= 0", height, grpctypes.GRPCBlockHeightHeader)
 		}
@@ -114,9 +78,14 @@ func RunGRPCQuery(ctx Context, grpcCtx gocontext.Context, method string, req int
 		Height: ctx.Height,
 	}
 
-	abciRes, err := ctx.QueryABCI(abciReq)
+	res, err := ctx.QueryABCI(abciReq)
 	if err != nil {
-		return abci.ResponseQuery{}, nil, err
+		return err
+	}
+
+	err = protoCodec.Unmarshal(res.Value, reply)
+	if err != nil {
+		return err
 	}
 
 	// Create header metadata. For now the headers contain:
@@ -124,7 +93,24 @@ func RunGRPCQuery(ctx Context, grpcCtx gocontext.Context, method string, req int
 	// We then parse all the call options, if the call option is a
 	// HeaderCallOption, then we manually set the value of that header to the
 	// metadata.
-	md = metadata.Pairs(grpctypes.GRPCBlockHeightHeader, strconv.FormatInt(abciRes.Height, 10))
+	md = metadata.Pairs(grpctypes.GRPCBlockHeightHeader, strconv.FormatInt(res.Height, 10))
+	for _, callOpt := range opts {
+		header, ok := callOpt.(grpc.HeaderCallOption)
+		if !ok {
+			continue
+		}
 
-	return abciRes, md, nil
+		*header.HeaderAddr = md
+	}
+
+	if ctx.InterfaceRegistry != nil {
+		return types.UnpackInterfaces(reply, ctx.InterfaceRegistry)
+	}
+
+	return nil
+}
+
+// NewStream implements the grpc ClientConn.NewStream method
+func (Context) NewStream(gocontext.Context, *grpc.StreamDesc, string, ...grpc.CallOption) (grpc.ClientStream, error) {
+	return nil, fmt.Errorf("streaming rpc not supported")
 }
