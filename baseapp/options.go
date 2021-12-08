@@ -57,6 +57,11 @@ func SetIndexEvents(ie []string) func(*BaseApp) {
 	return func(app *BaseApp) { app.setIndexEvents(ie) }
 }
 
+// SetIAVLCacheSize provides a BaseApp option function that sets the size of IAVL cache.
+func SetIAVLCacheSize(size int) func(*BaseApp) {
+	return func(bapp *BaseApp) { bapp.cms.SetIAVLCacheSize(size) }
+}
+
 // SetInterBlockCache provides a BaseApp option function that sets the
 // inter-block cache.
 func SetInterBlockCache(cache sdk.MultiStorePersistentCache) func(*BaseApp) {
