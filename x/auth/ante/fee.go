@@ -77,7 +77,7 @@ func (dfd DeductFeeDecorator) AnteHandle(ctx sdk.Context, tx sdk.Tx, simulate bo
 	}
 
 	if addr := dfd.ak.GetModuleAddress(types.FeeCollectorName); addr == nil {
-		panic(fmt.Sprintf("%s module account has not been set", types.FeeCollectorName))
+		return ctx, fmt.Errorf("Fee collector module account (%s) has not been set", types.FeeCollectorName)
 	}
 
 	feePayer := feeTx.FeePayer()
