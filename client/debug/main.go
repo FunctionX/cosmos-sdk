@@ -17,6 +17,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/version"
 )
 
+// Cmd creates a main CLI command
 func Cmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "debug",
@@ -125,7 +126,7 @@ func AddrCmd() *cobra.Command {
 		Use:   "addr [address]",
 		Short: "Convert an address between hex and bech32",
 		Long: fmt.Sprintf(`Convert an address between hex encoding and bech32.
-			
+
 Example:
 $ %s debug addr cosmos1e0jnq2sun3dzjh8p2xq95kk0expwmd7shwjpfg
 			`, version.AppName),
@@ -152,13 +153,10 @@ $ %s debug addr cosmos1e0jnq2sun3dzjh8p2xq95kk0expwmd7shwjpfg
 				}
 			}
 
-			accAddr := sdk.AccAddress(addr)
-			valAddr := sdk.ValAddress(addr)
-
 			cmd.Println("Address:", addr)
 			cmd.Printf("Address (hex): %X\n", addr)
-			cmd.Printf("Bech32 Acc: %s\n", accAddr)
-			cmd.Printf("Bech32 Val: %s\n", valAddr)
+			cmd.Printf("Bech32 Acc: %s\n", sdk.AccAddress(addr))
+			cmd.Printf("Bech32 Val: %s\n", sdk.ValAddress(addr))
 			return nil
 		},
 	}
@@ -169,7 +167,7 @@ func RawBytesCmd() *cobra.Command {
 		Use:   "raw-bytes [raw-bytes]",
 		Short: "Convert raw bytes output (eg. [10 21 13 255]) to hex",
 		Long: fmt.Sprintf(`Convert raw-bytes to hex.
-			
+
 Example:
 $ %s debug raw-bytes [72 101 108 108 111 44 32 112 108 97 121 103 114 111 117 110 100]
 			`, version.AppName),
