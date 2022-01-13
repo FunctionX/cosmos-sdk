@@ -13,6 +13,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/tx"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"github.com/cosmos/cosmos-sdk/version"
 	"github.com/cosmos/cosmos-sdk/x/staking/types"
 )
@@ -121,16 +122,13 @@ func NewEditValidatorCmd() *cobra.Command {
 			if minSelfDelegationString != "" {
 				msb, ok := sdk.NewIntFromString(minSelfDelegationString)
 				if !ok {
-					return types.ErrMinSelfDelegationInvalid
+					return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "minimum self delegation must be a positive integer")
 				}
 
 				newMinSelfDelegation = &msb
 			}
 
 			msg := types.NewMsgEditValidator(sdk.ValAddress(valAddr), description, newRate, newMinSelfDelegation)
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
 
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
@@ -177,9 +175,6 @@ $ %s tx staking delegate %s1l2rsakp388kuv9k8qzq6lrm9taddae7fpx59wm 1000stake --f
 			}
 
 			msg := types.NewMsgDelegate(delAddr, valAddr, amount)
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
 
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
@@ -228,9 +223,6 @@ $ %s tx staking redelegate %s1gghjut3ccd8ay0zduzj64hwre2fxs9ldmqhffj %s1l2rsakp3
 			}
 
 			msg := types.NewMsgBeginRedelegate(delAddr, valSrcAddr, valDstAddr, amount)
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
 
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
@@ -274,9 +266,6 @@ $ %s tx staking unbond %s1gghjut3ccd8ay0zduzj64hwre2fxs9ldmqhffj 100stake --from
 			}
 
 			msg := types.NewMsgUndelegate(delAddr, valAddr, amount)
-			if err := msg.ValidateBasic(); err != nil {
-				return err
-			}
 
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
@@ -295,7 +284,10 @@ func NewBuildCreateValidatorMsg(clientCtx client.Context, txf tx.Factory, fs *fl
 	}
 
 	valAddr := clientCtx.GetFromAddress()
-	pkStr, _ := fs.GetString(FlagPubKey)
+	pkStr, err := fs.GetString(FlagPubKey)
+	if err != nil {
+		return txf, nil, err
+	}
 
 	pk, err := sdk.GetPubKeyFromBech32(sdk.Bech32PubKeyTypeConsPub, pkStr)
 	if err != nil {
@@ -330,7 +322,7 @@ func NewBuildCreateValidatorMsg(clientCtx client.Context, txf tx.Factory, fs *fl
 
 	minSelfDelegation, ok := sdk.NewIntFromString(msbStr)
 	if !ok {
-		return txf, nil, types.ErrMinSelfDelegationInvalid
+		return txf, nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "minimum self delegation must be a positive integer")
 	}
 
 	msg, err := types.NewMsgCreateValidator(
@@ -540,7 +532,7 @@ func BuildCreateValidatorMsg(clientCtx client.Context, config TxCreateValidatorC
 	minSelfDelegation, ok := sdk.NewIntFromString(msbStr)
 
 	if !ok {
-		return txBldr, nil, types.ErrMinSelfDelegationInvalid
+		return txBldr, nil, sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "minimum self delegation must be a positive integer")
 	}
 
 	msg, err := types.NewMsgCreateValidator(

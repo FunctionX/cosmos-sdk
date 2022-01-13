@@ -125,10 +125,6 @@ $ %s tx gov submit-proposal --title="Test Proposal" --description="My awesome pr
 				return fmt.Errorf("invalid message: %w", err)
 			}
 
-			if err = msg.ValidateBasic(); err != nil {
-				return fmt.Errorf("message validation failed: %w", err)
-			}
-
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
 	}
@@ -181,10 +177,6 @@ $ %s tx gov deposit 1 10stake --from mykey
 			}
 
 			msg := types.NewMsgDeposit(from, proposalID, amount)
-			err = msg.ValidateBasic()
-			if err != nil {
-				return err
-			}
 
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},
@@ -204,7 +196,6 @@ func NewCmdVote() *cobra.Command {
 		Long: strings.TrimSpace(
 			fmt.Sprintf(`Submit a vote for an active proposal. You can
 find the proposal-id by running "%s query gov proposals".
-
 
 Example:
 $ %s tx gov vote 1 yes --from mykey
@@ -234,10 +225,6 @@ $ %s tx gov vote 1 yes --from mykey
 
 			// Build vote message and run basic validation
 			msg := types.NewMsgVote(from, proposalID, byteVoteOption)
-			err = msg.ValidateBasic()
-			if err != nil {
-				return err
-			}
 
 			return tx.GenerateOrBroadcastTxCLI(clientCtx, cmd.Flags(), msg)
 		},

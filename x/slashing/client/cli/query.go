@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"context"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -9,7 +8,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-
 	"github.com/cosmos/cosmos-sdk/x/slashing/types"
 )
 
@@ -49,16 +47,16 @@ $ <appd> query slashing signing-info cosmosvalconspub1zcjduepqfhvwcmt7p06fvdgexx
 			if err != nil {
 				return err
 			}
-			queryClient := types.NewQueryClient(clientCtx)
 
 			pk, err := sdk.GetPubKeyFromBech32(sdk.Bech32PubKeyTypeConsPub, args[0])
 			if err != nil {
 				return err
 			}
 
+			queryClient := types.NewQueryClient(clientCtx)
 			consAddr := sdk.ConsAddress(pk.Address())
 			params := &types.QuerySigningInfoRequest{ConsAddress: consAddr.String()}
-			res, err := queryClient.SigningInfo(context.Background(), params)
+			res, err := queryClient.SigningInfo(cmd.Context(), params)
 			if err != nil {
 				return err
 			}
@@ -81,7 +79,7 @@ func GetCmdQuerySigningInfos() *cobra.Command {
 
 $ <appd> query slashing signing-infos
 `),
-		Args: cobra.ExactArgs(1),
+		Args: cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			clientCtx, err := client.GetClientQueryContext(cmd)
 			if err != nil {
@@ -95,7 +93,7 @@ $ <appd> query slashing signing-infos
 			}
 
 			params := &types.QuerySigningInfosRequest{Pagination: pageReq}
-			res, err := queryClient.SigningInfos(context.Background(), params)
+			res, err := queryClient.SigningInfos(cmd.Context(), params)
 			if err != nil {
 				return err
 			}
@@ -128,7 +126,7 @@ $ <appd> query slashing params
 			queryClient := types.NewQueryClient(clientCtx)
 
 			params := &types.QueryParamsRequest{}
-			res, err := queryClient.Params(context.Background(), params)
+			res, err := queryClient.Params(cmd.Context(), params)
 			if err != nil {
 				return err
 			}
