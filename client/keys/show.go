@@ -13,6 +13,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/ledger"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	sdkerr "github.com/cosmos/cosmos-sdk/types/errors"
 )
 
 const (
@@ -41,12 +42,12 @@ consisting of all the keys provided by name and multisig threshold.`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: runShowCmd,
 	}
-
-	cmd.Flags().String(FlagBechPrefix, sdk.PrefixAccount, "The Bech32 prefix encoding for a key (acc|val|cons)")
-	cmd.Flags().BoolP(FlagAddress, "a", false, "Output the address only (overrides --output)")
-	cmd.Flags().BoolP(FlagPublicKey, "p", false, "Output the public key only (overrides --output)")
-	cmd.Flags().BoolP(FlagDevice, "d", false, "Output the address in a ledger device")
-	cmd.Flags().Int(flagMultiSigThreshold, 1, "K out of N required signatures")
+	f := cmd.Flags()
+	f.String(FlagBechPrefix, sdk.PrefixAccount, "The Bech32 prefix encoding for a key (acc|val|cons)")
+	f.BoolP(FlagAddress, "a", false, "Output the address only (overrides --output)")
+	f.BoolP(FlagPublicKey, "p", false, "Output the public key only (overrides --output)")
+	f.BoolP(FlagDevice, "d", false, "Output the address in a ledger device")
+	f.Int(flagMultiSigThreshold, 1, "K out of N required signatures")
 
 	return cmd
 }
@@ -149,19 +150,20 @@ func runShowCmd(cmd *cobra.Command, args []string) (err error) {
 }
 
 func fetchKey(kb keyring.Keyring, keyref string) (keyring.Info, error) {
+	// firstly check if the keyref is a key name of a key registered in a keyring.
 	info, err := kb.Key(keyref)
-	if err != nil {
-		accAddr, err := sdk.AccAddressFromBech32(keyref)
-		if err != nil {
-			return info, err
-		}
-
-		info, err = kb.KeyByAddress(accAddr)
-		if err != nil {
-			return info, errors.New("key not found")
-		}
+	// if the key is not there or if we have a problem with a keyring itself then we move to a
+	// fallback: searching for key by address.
+	if err == nil || !sdkerr.IsOf(err, sdkerr.ErrIO, sdkerr.ErrKeyNotFound) {
+		return info, err
 	}
-	return info, nil
+	accAddr, err := sdk.AccAddressFromBech32(keyref)
+	if err != nil {
+		return info, err
+	}
+
+	info, err = kb.KeyByAddress(accAddr)
+	return info, sdkerr.Wrap(err, "Invalid key")
 }
 
 func validateMultisigThreshold(k, nKeys int) error {
