@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/tendermint/tendermint/libs/bytes"
+	tmcli "github.com/tendermint/tendermint/libs/cli"
 	"github.com/tendermint/tendermint/p2p"
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 
@@ -64,18 +65,13 @@ func StatusCommand() *cobra.Command {
 					VotingPower: status.ValidatorInfo.VotingPower,
 				},
 			}
-
-			output, err := clientCtx.LegacyAmino.MarshalJSON(statusWithPk)
-			if err != nil {
-				return err
-			}
-
-			cmd.Println(string(output))
-			return nil
+			//nolint
+			return clientCtx.PrintObjectLegacy(statusWithPk)
 		},
 	}
 
-	cmd.Flags().StringP(flags.FlagNode, "n", "tcp://localhost:26657", "Node to connect to")
+	cmd.Flags().StringP(tmcli.OutputFlag, "o", "json", "Output format (text|json)")
+	cmd.Flags().String(flags.FlagNode, "tcp://localhost:26657", "<host>:<port> to Tendermint RPC interface for this chain")
 
 	return cmd
 }

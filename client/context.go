@@ -6,13 +6,11 @@ import (
 	"io"
 	"os"
 
-	"github.com/spf13/viper"
-
-	"gopkg.in/yaml.v2"
-
 	"github.com/gogo/protobuf/proto"
 	"github.com/pkg/errors"
+	"github.com/spf13/viper"
 	rpcclient "github.com/tendermint/tendermint/rpc/client"
+	"gopkg.in/yaml.v2"
 
 	"github.com/cosmos/cosmos-sdk/codec"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
@@ -257,7 +255,7 @@ func (ctx Context) PrintProto(toPrint proto.Message) error {
 	if err != nil {
 		return err
 	}
-	return ctx.printOutput(out)
+	return ctx.PrintOutput(out)
 }
 
 // PrintObjectLegacy is a variant of PrintProto that doesn't require a proto.Message type
@@ -268,10 +266,10 @@ func (ctx Context) PrintObjectLegacy(toPrint interface{}) error {
 	if err != nil {
 		return err
 	}
-	return ctx.printOutput(out)
+	return ctx.PrintOutput(out)
 }
 
-func (ctx Context) printOutput(out []byte) error {
+func (ctx Context) PrintOutput(out []byte) error {
 	if ctx.OutputFormat == "text" {
 		// handle text format by decoding and re-encoding JSON as YAML
 		var j interface{}

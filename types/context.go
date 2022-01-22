@@ -4,14 +4,13 @@ import (
 	"context"
 	"time"
 
+	"github.com/cosmos/cosmos-sdk/store/gaskv"
+	stypes "github.com/cosmos/cosmos-sdk/store/types"
 	"github.com/gogo/protobuf/proto"
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	"github.com/tendermint/tendermint/libs/log"
 	tmproto "github.com/tendermint/tendermint/proto/tendermint/types"
-
-	"github.com/cosmos/cosmos-sdk/store/gaskv"
-	stypes "github.com/cosmos/cosmos-sdk/store/types"
 )
 
 /*

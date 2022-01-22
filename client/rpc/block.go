@@ -2,7 +2,6 @@ package rpc
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -13,6 +12,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec/legacy"
 	"github.com/cosmos/cosmos-sdk/types/rest"
+	tmcli "github.com/tendermint/tendermint/libs/cli"
 )
 
 // BlockCommand returns the verified block data for a given heights
@@ -45,13 +45,11 @@ func BlockCommand() *cobra.Command {
 				return err
 			}
 
-			fmt.Println(string(output))
-			return nil
+			return clientCtx.PrintOutput(output)
 		},
 	}
-
-	cmd.Flags().StringP(flags.FlagNode, "n", "tcp://localhost:26657", "Node to connect to")
-
+	cmd.Flags().StringP(tmcli.OutputFlag, "o", "json", "Output format (text|json)")
+	cmd.Flags().String(flags.FlagNode, "tcp://localhost:26657", "<host>:<port> to Tendermint RPC interface for this chain")
 	return cmd
 }
 
