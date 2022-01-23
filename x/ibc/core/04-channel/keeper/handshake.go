@@ -88,7 +88,7 @@ func (k Keeper) ChanOpenInit(
 	k.Logger(ctx).Info("channel state updated", "port-id", portID, "channel-id", channelID, "previous-state", "NONE", "new-state", "INIT")
 
 	defer func() {
-		telemetry.IncrCounter(1, "ibc", "channel", "open_init")
+		telemetry.IncrCounter(1, "ibc", "channel", "open-init")
 	}()
 
 	return channelID, capKey, nil
@@ -229,7 +229,7 @@ func (k Keeper) ChanOpenTry(
 	k.Logger(ctx).Info("channel state updated", "port-id", portID, "channel-id", channelID, "previous-state", previousChannel.State.String(), "new-state", "TRYOPEN")
 
 	defer func() {
-		telemetry.IncrCounter(1, "ibc", "channel", "open_try")
+		telemetry.IncrCounter(1, "ibc", "channel", "open-try")
 	}()
 
 	return channelID, capKey, nil
@@ -299,7 +299,7 @@ func (k Keeper) ChanOpenAck(
 	k.Logger(ctx).Info("channel state updated", "port-id", portID, "channel-id", channelID, "previous-state", channel.State.String(), "new-state", "OPEN")
 
 	defer func() {
-		telemetry.IncrCounter(1, "ibc", "channel", "open_ack")
+		telemetry.IncrCounter(1, "ibc", "channel", "open-ack")
 	}()
 
 	channel.State = types.OPEN
@@ -373,7 +373,7 @@ func (k Keeper) ChanOpenConfirm(
 	k.Logger(ctx).Info("channel state updated", "port-id", portID, "channel-id", channelID, "previous-state", "TRYOPEN", "new-state", "OPEN")
 
 	defer func() {
-		telemetry.IncrCounter(1, "ibc", "channel", "open_confirm")
+		telemetry.IncrCounter(1, "ibc", "channel", "open-confirm")
 	}()
 	return nil
 }
@@ -419,7 +419,7 @@ func (k Keeper) ChanCloseInit(
 	k.Logger(ctx).Info("channel state updated", "port-id", portID, "channel-id", channelID, "previous-state", channel.State.String(), "new-state", "CLOSED")
 
 	defer func() {
-		telemetry.IncrCounter(1, "ibc", "channel", "close_init")
+		telemetry.IncrCounter(1, "ibc", "channel", "close-init")
 	}()
 
 	channel.State = types.CLOSED
@@ -486,7 +486,7 @@ func (k Keeper) ChanCloseConfirm(
 	k.Logger(ctx).Info("channel state updated", "port-id", portID, "channel-id", channelID, "previous-state", channel.State.String(), "new-state", "CLOSED")
 
 	defer func() {
-		telemetry.IncrCounter(1, "ibc", "channel", "close_confirm")
+		telemetry.IncrCounter(1, "ibc", "channel", "close-confirm")
 	}()
 
 	channel.State = types.CLOSED
