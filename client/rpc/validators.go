@@ -3,13 +3,13 @@ package rpc
 import (
 	"context"
 	"fmt"
+	tmcli "github.com/tendermint/tendermint/libs/cli"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
-
 	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -59,8 +59,8 @@ func ValidatorCommand() *cobra.Command {
 		},
 	}
 
+	cmd.Flags().StringP(tmcli.OutputFlag, "o", "json", "Output format (text|json)")
 	cmd.Flags().String(flags.FlagNode, "tcp://localhost:26657", "<host>:<port> to Tendermint RPC interface for this chain")
-	cmd.Flags().String(flags.FlagKeyringBackend, flags.DefaultKeyringBackend, "Select keyring's backend (os|file|kwallet|pass|test)")
 	cmd.Flags().Int(flags.FlagPage, rest.DefaultPage, "Query a specific page of paginated results")
 	cmd.Flags().Int(flags.FlagLimit, 100, "Query number of results returned per page")
 
@@ -79,12 +79,14 @@ type ValidatorOutput struct {
 type ResultValidatorsOutput struct {
 	BlockHeight int64             `json:"block_height"`
 	Validators  []ValidatorOutput `json:"validators"`
+	Total       uint64            `json:"total"`
 }
 
 func (rvo ResultValidatorsOutput) String() string {
 	var b strings.Builder
 
 	b.WriteString(fmt.Sprintf("block height: %d\n", rvo.BlockHeight))
+	b.WriteString(fmt.Sprintf("total count: %d\n", rvo.Total))
 
 	for _, val := range rvo.Validators {
 		b.WriteString(
@@ -129,19 +131,23 @@ func GetValidators(clientCtx client.Context, height *int64, page, limit *int) (R
 		return ResultValidatorsOutput{}, err
 	}
 
-	outputValidatorsRes := ResultValidatorsOutput{
+	total := validatorsRes.Total
+	if validatorsRes.Total < 0 {
+		total = 0
+	}
+	out := ResultValidatorsOutput{
 		BlockHeight: validatorsRes.BlockHeight,
 		Validators:  make([]ValidatorOutput, len(validatorsRes.Validators)),
+		Total:       uint64(total),
 	}
-
 	for i := 0; i < len(validatorsRes.Validators); i++ {
-		outputValidatorsRes.Validators[i], err = validatorOutput(validatorsRes.Validators[i])
+		out.Validators[i], err = validatorOutput(validatorsRes.Validators[i])
 		if err != nil {
-			return ResultValidatorsOutput{}, err
+			return out, err
 		}
 	}
 
-	return outputValidatorsRes, nil
+	return out, nil
 }
 
 // REST
