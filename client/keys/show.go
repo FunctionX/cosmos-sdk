@@ -3,7 +3,7 @@ package keys
 import (
 	"errors"
 	"fmt"
-
+	keyring2 "github.com/99designs/keyring"
 	"github.com/spf13/cobra"
 	"github.com/tendermint/tendermint/libs/cli"
 
@@ -42,12 +42,12 @@ consisting of all the keys provided by name and multisig threshold.`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: runShowCmd,
 	}
-	f := cmd.Flags()
-	f.String(FlagBechPrefix, sdk.PrefixAccount, "The Bech32 prefix encoding for a key (acc|val|cons)")
-	f.BoolP(FlagAddress, "a", false, "Output the address only (overrides --output)")
-	f.BoolP(FlagPublicKey, "p", false, "Output the public key only (overrides --output)")
-	f.BoolP(FlagDevice, "d", false, "Output the address in a ledger device")
-	f.Int(flagMultiSigThreshold, 1, "K out of N required signatures")
+
+	cmd.Flags().String(FlagBechPrefix, sdk.PrefixAccount, "The Bech32 prefix encoding for a key (acc|val|cons)")
+	cmd.Flags().BoolP(FlagAddress, "a", false, "Output the address only (overrides --output)")
+	cmd.Flags().BoolP(FlagPublicKey, "p", false, "Output the public key only (overrides --output)")
+	cmd.Flags().BoolP(FlagDevice, "d", false, "Output the address in a ledger device")
+	cmd.Flags().Int(flagMultiSigThreshold, 1, "K out of N required signatures")
 
 	return cmd
 }
@@ -154,7 +154,7 @@ func fetchKey(kb keyring.Keyring, keyref string) (keyring.Info, error) {
 	info, err := kb.Key(keyref)
 	// if the key is not there or if we have a problem with a keyring itself then we move to a
 	// fallback: searching for key by address.
-	if err == nil || !sdkerr.IsOf(err, sdkerr.ErrIO, sdkerr.ErrKeyNotFound) {
+	if err == nil || !sdkerr.IsOf(err, sdkerr.ErrIO, sdkerr.ErrKeyNotFound, keyring2.ErrKeyNotFound) {
 		return info, err
 	}
 	accAddr, err := sdk.AccAddressFromBech32(keyref)

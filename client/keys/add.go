@@ -39,7 +39,7 @@ const (
 func AddKeyCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add <name>",
-		Short: "Add an encrypted private key (either newly generated or recovered), encrypt it, and save to <name> file",
+		Short: "Add an encrypted private key (either newly generated or recovered), encrypt it, and save to disk",
 		Long: `Derive a new private key and encrypt to disk.
 Optionally specify a BIP39 mnemonic, a BIP39 passphrase to further secure the mnemonic,
 and a bip32 HD path to derive a specific account. The key will be stored under the given name
@@ -52,31 +52,29 @@ local keystore.
 Use the --pubkey flag to add arbitrary public keys to the keystore for constructing
 multisig transactions.
 
-You can create and store a multisig key by passing the list of key names stored in a keyring
-and the minimum number of signatures required through --multisig-threshold. The keys are
-sorted by address, unless the flag --nosort is set.
-Example:
-
-    keys add mymultisig --multisig "keyname1,keyname2,keyname3" --multisig-threshold 2
+You can add a multisig key by passing the list of key names you want the public
+key to be composed of to the --multisig flag and the minimum number of signatures
+required through --multisig-threshold. The keys are sorted by address, unless
+the flag --nosort is set.
 `,
 		Args: cobra.ExactArgs(1),
 		RunE: runAddCmdPrepare,
 	}
-	f := cmd.Flags()
-	f.StringSlice(flagMultisig, nil, "List of key names stored in keyring to construct a public legacy multisig key")
-	f.Int(flagMultiSigThreshold, 1, "K out of N required signatures. For use in conjunction with --multisig")
-	f.Bool(flagNoSort, false, "Keys passed to --multisig are taken in the order they're supplied")
-	f.String(FlagPublicKey, "", "Parse a public key in JSON format and saves key info to <name> file.")
-	f.BoolP(flagInteractive, "i", false, "Interactively prompt user for BIP39 passphrase and mnemonic")
-	f.Bool(flags.FlagUseLedger, false, "Store a local reference to a private key on a Ledger device")
-	f.Bool(flagRecover, false, "Provide seed phrase to recover existing key instead of creating")
-	f.Bool(flagNoBackup, false, "Don't print out seed phrase (if others are watching the terminal)")
-	f.Bool(flags.FlagDryRun, false, "Perform action, but don't add key to local keystore")
-	f.String(flagHDPath, "", "Manual HD Path derivation (overrides BIP44 config)")
-	f.Uint32(flagCoinType, sdk.GetConfig().GetCoinType(), "coin type number for HD derivation")
-	f.Uint32(flagAccount, 0, "Account number for HD derivation")
-	f.Uint32(flagIndex, 0, "Address index number for HD derivation")
-	f.String(flags.FlagKeyAlgorithm, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
+
+	cmd.Flags().StringSlice(flagMultisig, nil, "Construct and store a multisig public key (implies --pubkey)")
+	cmd.Flags().Int(flagMultiSigThreshold, 1, "K out of N required signatures. For use in conjunction with --multisig")
+	cmd.Flags().Bool(flagNoSort, false, "Keys passed to --multisig are taken in the order they're supplied")
+	cmd.Flags().String(FlagPublicKey, "", "Parse a public key in bech32 format and save it to disk")
+	cmd.Flags().BoolP(flagInteractive, "i", false, "Interactively prompt user for BIP39 passphrase and mnemonic")
+	cmd.Flags().Bool(flags.FlagUseLedger, false, "Store a local reference to a private key on a Ledger device")
+	cmd.Flags().Bool(flagRecover, false, "Provide seed phrase to recover existing key instead of creating")
+	cmd.Flags().Bool(flagNoBackup, false, "Don't print out seed phrase (if others are watching the terminal)")
+	cmd.Flags().Bool(flags.FlagDryRun, false, "Perform action, but don't add key to local keystore")
+	cmd.Flags().String(flagHDPath, "", "Manual HD Path derivation (overrides BIP44 config)")
+	cmd.Flags().Uint32(flagCoinType, sdk.GetConfig().GetCoinType(), "coin type number for HD derivation")
+	cmd.Flags().Uint32(flagAccount, 0, "Account number for HD derivation")
+	cmd.Flags().Uint32(flagIndex, 0, "Address index number for HD derivation")
+	cmd.Flags().String(flags.FlagKeyAlgorithm, string(hd.Secp256k1Type), "Key signing algorithm to generate keys for")
 
 	return cmd
 }
