@@ -10,6 +10,7 @@ import (
 type ParamSubspace interface {
 	Get(ctx sdk.Context, key []byte, ptr interface{})
 	Set(ctx sdk.Context, key []byte, param interface{})
+	Has(ctx sdk.Context, key []byte) bool
 }
 
 // StakingKeeper expected staking keeper (Validator and Delegator sets) (noalias)

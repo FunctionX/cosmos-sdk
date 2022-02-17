@@ -26,6 +26,12 @@ func (keeper Keeper) GetTallyParams(ctx sdk.Context) types.TallyParams {
 	return tallyParams
 }
 
+func (keeper Keeper) GetEGFDepositParams(ctx sdk.Context) types.EGFDepositParams {
+	var params types.EGFDepositParams
+	keeper.paramSpace.Get(ctx, types.ParamStoreKeyEGFDepositParams, &params)
+	return params
+}
+
 // SetDepositParams sets DepositParams to the global param store
 func (keeper Keeper) SetDepositParams(ctx sdk.Context, depositParams types.DepositParams) {
 	keeper.paramSpace.Set(ctx, types.ParamStoreKeyDepositParams, &depositParams)
@@ -39,4 +45,12 @@ func (keeper Keeper) SetVotingParams(ctx sdk.Context, votingParams types.VotingP
 // SetTallyParams sets TallyParams to the global param store
 func (keeper Keeper) SetTallyParams(ctx sdk.Context, tallyParams types.TallyParams) {
 	keeper.paramSpace.Set(ctx, types.ParamStoreKeyTallyParams, &tallyParams)
+}
+
+func (keeper Keeper) SetEGFDepositParams(ctx sdk.Context, params types.EGFDepositParams) {
+	keeper.paramSpace.Set(ctx, types.ParamStoreKeyEGFDepositParams, &params)
+}
+
+func (keeper Keeper) hasInitEGFDepositParams(ctx sdk.Context) bool {
+	return keeper.paramSpace.Has(ctx, types.ParamStoreKeyEGFDepositParams)
 }

@@ -2,9 +2,9 @@ package keeper
 
 import (
 	"fmt"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	types2 "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	"github.com/cosmos/cosmos-sdk/x/gov/types"
 )
 
@@ -128,6 +128,8 @@ func (keeper Keeper) AddDeposit(ctx sdk.Context, proposalID uint64, depositorAdd
 		return false, err
 	}
 
+	// first deposit
+	first := proposal.TotalDeposit.IsZero()
 	// Update proposal
 	proposal.TotalDeposit = proposal.TotalDeposit.Add(depositAmount...)
 	keeper.SetProposal(ctx, proposal)
@@ -135,12 +137,22 @@ func (keeper Keeper) AddDeposit(ctx sdk.Context, proposalID uint64, depositorAdd
 	// Check if deposit has provided sufficient total funds to transition the proposal into the voting period
 	activatedVotingPeriod := false
 
-	if proposal.Status == types.StatusDepositPeriod && proposal.TotalDeposit.IsAllGTE(keeper.GetDepositParams(ctx).MinDeposit) {
-		keeper.ActivateVotingPeriod(ctx, proposal)
+	var minDeposit sdk.Coins
 
+	if keeper.SupportEGFProposal(ctx) && (types.CommunityPoolSpendByRouter == proposal.ProposalRoute() &&
+		types.ProposalTypeCommunityPoolSpend == proposal.ProposalType()) {
+		cpsp, ok := proposal.GetContent().(*types2.CommunityPoolSpendProposal)
+		if !ok {
+			return false, sdkerrors.Wrapf(types.ErrInvalidProposalType, "%d", proposalID)
+		}
+		minDeposit = keeper.SupportEGFProposalTotalDeposit(ctx, first, cpsp.Amount)
+	} else {
+		minDeposit = keeper.GetDepositParams(ctx).MinDeposit
+	}
+	if proposal.Status == types.StatusDepositPeriod && proposal.TotalDeposit.IsAllGTE(minDeposit) {
+		keeper.ActivateVotingPeriod(ctx, proposal)
 		activatedVotingPeriod = true
 	}
-
 	// Add or update deposit object
 	deposit, found := keeper.GetDeposit(ctx, proposalID, depositorAddr)
 
@@ -181,4 +193,30 @@ func (keeper Keeper) RefundDeposits(ctx sdk.Context, proposalID uint64) {
 		store.Delete(types.DepositKey(proposalID, depositor))
 		return false
 	})
+}
+
+func (keeper Keeper) SupportEGFProposal(ctx sdk.Context) bool {
+	// to reach the specified height
+	if types.GetEGFProposalSupportBlock() == 0 || ctx.BlockHeight() < types.GetEGFProposalSupportBlock() {
+		return false
+	}
+	if !keeper.hasInitEGFDepositParams(ctx) {
+		// initialization egf parameters
+		keeper.SetEGFDepositParams(ctx, types.DefaultEGFDepositParams())
+	}
+	return true
+}
+
+func (keeper Keeper) SupportEGFProposalTotalDeposit(ctx sdk.Context, first bool, claimCoin sdk.Coins) sdk.Coins {
+	// minimum collateral amount for initializing EGF proposals
+	egfDepositParams := keeper.GetEGFDepositParams(ctx)
+	if claimCoin.IsAllLTE(egfDepositParams.DepositProposalThreshold) && first {
+		return egfDepositParams.InitialDeposit
+	}
+	initialDeposit := egfDepositParams.InitialDeposit
+	for _, coin := range claimCoin {
+		amount := coin.Amount.ToDec().Mul(egfDepositParams.ClaimRatio).TruncateInt()
+		initialDeposit = initialDeposit.Add(sdk.NewCoin(coin.Denom, amount))
+	}
+	return initialDeposit
 }
