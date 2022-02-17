@@ -33,6 +33,13 @@ func (k msgServer) SubmitProposal(goCtx context.Context, msg *types.MsgSubmitPro
 
 	defer telemetry.IncrCounter(1, types.ModuleName, "proposal")
 
+	if types.SupportEGFProposal(ctx, proposal.ProposalType()) {
+		if len(msg.GetInitialDeposit()) == 0 ||
+			msg.GetInitialDeposit()[0].IsLT(sdk.Coin{Denom: msg.GetInitialDeposit()[0].Denom, Amount: sdk.NewInt(types.InitialDeposit)}) {
+			return nil, fmt.Errorf("initial amount too low")
+		}
+	}
+
 	votingStarted, err := k.Keeper.AddDeposit(ctx, proposal.ProposalId, msg.GetProposer(), msg.GetInitialDeposit())
 	if err != nil {
 		return nil, err

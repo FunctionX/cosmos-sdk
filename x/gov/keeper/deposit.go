@@ -2,6 +2,8 @@ package keeper
 
 import (
 	"fmt"
+	"regexp"
+	"strconv"
 
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
@@ -135,10 +137,25 @@ func (keeper Keeper) AddDeposit(ctx sdk.Context, proposalID uint64, depositorAdd
 	// Check if deposit has provided sufficient total funds to transition the proposal into the voting period
 	activatedVotingPeriod := false
 
-	if proposal.Status == types.StatusDepositPeriod && proposal.TotalDeposit.IsAllGTE(keeper.GetDepositParams(ctx).MinDeposit) {
-		keeper.ActivateVotingPeriod(ctx, proposal)
+	if types.SupportEGFProposal(ctx, proposal.ProposalType()) {
+		_claimCoin := proposal.GetContent().String()
+		claimCoin, err := stringEGFContentStringFormatCoins(_claimCoin)
+		if err != nil {
+			return false, err
+		}
+		totDepositProposal := types.SupportEGFProposalTotDepositProposal(sdk.Coin{Denom: depositAmount[0].Denom, Amount: sdk.NewInt(types.InitialDeposit)},
+			claimCoin)
+		if proposal.Status == types.StatusDepositPeriod && proposal.TotalDeposit.IsAllGTE(totDepositProposal) {
+			keeper.ActivateVotingPeriod(ctx, proposal)
 
-		activatedVotingPeriod = true
+			activatedVotingPeriod = true
+		}
+	} else {
+		if proposal.Status == types.StatusDepositPeriod && proposal.TotalDeposit.IsAllGTE(keeper.GetDepositParams(ctx).MinDeposit) {
+			keeper.ActivateVotingPeriod(ctx, proposal)
+
+			activatedVotingPeriod = true
+		}
 	}
 
 	// Add or update deposit object
@@ -181,4 +198,28 @@ func (keeper Keeper) RefundDeposits(ctx sdk.Context, proposalID uint64) {
 		store.Delete(types.DepositKey(proposalID, depositor))
 		return false
 	})
+}
+
+func stringEGFContentStringFormatCoins(contentString string) (sdk.Coin, error) {
+	if contentString == "" {
+		return sdk.Coin{}, fmt.Errorf("EGF content string fail")
+	}
+	numbers, err := extractNumbers(contentString)
+	if err != nil {
+		return sdk.Coin{}, err
+	}
+	denom := extractDenom(contentString)
+	return sdk.Coin{Denom: denom, Amount: sdk.NewInt(numbers)}, nil
+}
+
+func extractNumbers(target string) (int64, error) {
+	regex := `[0-9]+`
+	compile := regexp.MustCompile(regex)
+	return strconv.ParseInt(compile.FindString(target), 10, 64)
+}
+
+func extractDenom(target string) string {
+	regex := `[a-zA-Z][a-zA-Z0-9/-]{1,127}`
+	compile := regexp.MustCompile(regex)
+	return compile.FindString(target)
 }
