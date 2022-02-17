@@ -25,9 +25,10 @@ var (
 
 // Parameter store key
 var (
-	ParamStoreKeyDepositParams = []byte("depositparams")
-	ParamStoreKeyVotingParams  = []byte("votingparams")
-	ParamStoreKeyTallyParams   = []byte("tallyparams")
+	ParamStoreKeyDepositParams    = []byte("depositparams")
+	ParamStoreKeyVotingParams     = []byte("votingparams")
+	ParamStoreKeyTallyParams      = []byte("tallyparams")
+	ParamStoreKeyEGFDepositParams = []byte("egfDepositParams")
 )
 
 // ParamKeyTable - Key declaration for parameters
@@ -36,6 +37,7 @@ func ParamKeyTable() paramtypes.KeyTable {
 		paramtypes.NewParamSetPair(ParamStoreKeyDepositParams, DepositParams{}, validateDepositParams),
 		paramtypes.NewParamSetPair(ParamStoreKeyVotingParams, VotingParams{}, validateVotingParams),
 		paramtypes.NewParamSetPair(ParamStoreKeyTallyParams, TallyParams{}, validateTallyParams),
+		paramtypes.NewParamSetPair(ParamStoreKeyEGFDepositParams, EGFDepositParams{}, validateEGFPDepositParams),
 	)
 }
 
