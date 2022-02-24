@@ -12,9 +12,15 @@
 - [cosmos/auth/v1beta1/genesis.proto](#cosmos/auth/v1beta1/genesis.proto)
     - [GenesisState](#cosmos.auth.v1beta1.GenesisState)
   
+- [cosmos/base/query/v1beta1/pagination.proto](#cosmos/base/query/v1beta1/pagination.proto)
+    - [PageRequest](#cosmos.base.query.v1beta1.PageRequest)
+    - [PageResponse](#cosmos.base.query.v1beta1.PageResponse)
+  
 - [cosmos/auth/v1beta1/query.proto](#cosmos/auth/v1beta1/query.proto)
     - [QueryAccountRequest](#cosmos.auth.v1beta1.QueryAccountRequest)
     - [QueryAccountResponse](#cosmos.auth.v1beta1.QueryAccountResponse)
+    - [QueryAccountsRequest](#cosmos.auth.v1beta1.QueryAccountsRequest)
+    - [QueryAccountsResponse](#cosmos.auth.v1beta1.QueryAccountsResponse)
     - [QueryParamsRequest](#cosmos.auth.v1beta1.QueryParamsRequest)
     - [QueryParamsResponse](#cosmos.auth.v1beta1.QueryParamsResponse)
   
@@ -38,10 +44,6 @@
 - [cosmos/bank/v1beta1/genesis.proto](#cosmos/bank/v1beta1/genesis.proto)
     - [Balance](#cosmos.bank.v1beta1.Balance)
     - [GenesisState](#cosmos.bank.v1beta1.GenesisState)
-  
-- [cosmos/base/query/v1beta1/pagination.proto](#cosmos/base/query/v1beta1/pagination.proto)
-    - [PageRequest](#cosmos.base.query.v1beta1.PageRequest)
-    - [PageResponse](#cosmos.base.query.v1beta1.PageResponse)
   
 - [cosmos/bank/v1beta1/query.proto](#cosmos/bank/v1beta1/query.proto)
     - [QueryAllBalancesRequest](#cosmos.bank.v1beta1.QueryAllBalancesRequest)
@@ -92,6 +94,36 @@
     - [ListImplementationsResponse](#cosmos.base.reflection.v1beta1.ListImplementationsResponse)
   
     - [ReflectionService](#cosmos.base.reflection.v1beta1.ReflectionService)
+  
+- [cosmos/base/reflection/v2alpha1/reflection.proto](#cosmos/base/reflection/v2alpha1/reflection.proto)
+    - [AppDescriptor](#cosmos.base.reflection.v2alpha1.AppDescriptor)
+    - [AuthnDescriptor](#cosmos.base.reflection.v2alpha1.AuthnDescriptor)
+    - [ChainDescriptor](#cosmos.base.reflection.v2alpha1.ChainDescriptor)
+    - [CodecDescriptor](#cosmos.base.reflection.v2alpha1.CodecDescriptor)
+    - [ConfigurationDescriptor](#cosmos.base.reflection.v2alpha1.ConfigurationDescriptor)
+    - [GetAuthnDescriptorRequest](#cosmos.base.reflection.v2alpha1.GetAuthnDescriptorRequest)
+    - [GetAuthnDescriptorResponse](#cosmos.base.reflection.v2alpha1.GetAuthnDescriptorResponse)
+    - [GetChainDescriptorRequest](#cosmos.base.reflection.v2alpha1.GetChainDescriptorRequest)
+    - [GetChainDescriptorResponse](#cosmos.base.reflection.v2alpha1.GetChainDescriptorResponse)
+    - [GetCodecDescriptorRequest](#cosmos.base.reflection.v2alpha1.GetCodecDescriptorRequest)
+    - [GetCodecDescriptorResponse](#cosmos.base.reflection.v2alpha1.GetCodecDescriptorResponse)
+    - [GetConfigurationDescriptorRequest](#cosmos.base.reflection.v2alpha1.GetConfigurationDescriptorRequest)
+    - [GetConfigurationDescriptorResponse](#cosmos.base.reflection.v2alpha1.GetConfigurationDescriptorResponse)
+    - [GetQueryServicesDescriptorRequest](#cosmos.base.reflection.v2alpha1.GetQueryServicesDescriptorRequest)
+    - [GetQueryServicesDescriptorResponse](#cosmos.base.reflection.v2alpha1.GetQueryServicesDescriptorResponse)
+    - [GetTxDescriptorRequest](#cosmos.base.reflection.v2alpha1.GetTxDescriptorRequest)
+    - [GetTxDescriptorResponse](#cosmos.base.reflection.v2alpha1.GetTxDescriptorResponse)
+    - [InterfaceAcceptingMessageDescriptor](#cosmos.base.reflection.v2alpha1.InterfaceAcceptingMessageDescriptor)
+    - [InterfaceDescriptor](#cosmos.base.reflection.v2alpha1.InterfaceDescriptor)
+    - [InterfaceImplementerDescriptor](#cosmos.base.reflection.v2alpha1.InterfaceImplementerDescriptor)
+    - [MsgDescriptor](#cosmos.base.reflection.v2alpha1.MsgDescriptor)
+    - [QueryMethodDescriptor](#cosmos.base.reflection.v2alpha1.QueryMethodDescriptor)
+    - [QueryServiceDescriptor](#cosmos.base.reflection.v2alpha1.QueryServiceDescriptor)
+    - [QueryServicesDescriptor](#cosmos.base.reflection.v2alpha1.QueryServicesDescriptor)
+    - [SigningModeDescriptor](#cosmos.base.reflection.v2alpha1.SigningModeDescriptor)
+    - [TxDescriptor](#cosmos.base.reflection.v2alpha1.TxDescriptor)
+  
+    - [ReflectionService](#cosmos.base.reflection.v2alpha1.ReflectionService)
   
 - [cosmos/base/snapshots/v1beta1/snapshot.proto](#cosmos/base/snapshots/v1beta1/snapshot.proto)
     - [Metadata](#cosmos.base.snapshots.v1beta1.Metadata)
@@ -437,6 +469,8 @@
 - [cosmos/tx/v1beta1/service.proto](#cosmos/tx/v1beta1/service.proto)
     - [BroadcastTxRequest](#cosmos.tx.v1beta1.BroadcastTxRequest)
     - [BroadcastTxResponse](#cosmos.tx.v1beta1.BroadcastTxResponse)
+    - [GetBlockWithTxsRequest](#cosmos.tx.v1beta1.GetBlockWithTxsRequest)
+    - [GetBlockWithTxsResponse](#cosmos.tx.v1beta1.GetBlockWithTxsResponse)
     - [GetTxRequest](#cosmos.tx.v1beta1.GetTxRequest)
     - [GetTxResponse](#cosmos.tx.v1beta1.GetTxResponse)
     - [GetTxsEventRequest](#cosmos.tx.v1beta1.GetTxsEventRequest)
@@ -795,6 +829,69 @@ GenesisState defines the auth module's genesis state.
 
 
 
+<a name="cosmos/base/query/v1beta1/pagination.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## cosmos/base/query/v1beta1/pagination.proto
+
+
+
+<a name="cosmos.base.query.v1beta1.PageRequest"></a>
+
+### PageRequest
+PageRequest is to be embedded in gRPC request messages for efficient
+pagination. Ex:
+
+ message SomeRequest {
+         Foo some_parameter = 1;
+         PageRequest pagination = 2;
+ }
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `key` | [bytes](#bytes) |  | key is a value returned in PageResponse.next_key to begin querying the next page most efficiently. Only one of offset or key should be set. |
+| `offset` | [uint64](#uint64) |  | offset is a numeric offset that can be used when key is unavailable. It is less efficient than using key. Only one of offset or key should be set. |
+| `limit` | [uint64](#uint64) |  | limit is the total number of results to be returned in the result page. If left empty it will default to a value to be set by each app. |
+| `count_total` | [bool](#bool) |  | count_total is set to true to indicate that the result set should include a count of the total number of items available for pagination in UIs. count_total is only respected when offset is used. It is ignored when key is set. |
+| `reverse` | [bool](#bool) |  | reverse is set to true if results are to be returned in the descending order. |
+
+
+
+
+
+
+<a name="cosmos.base.query.v1beta1.PageResponse"></a>
+
+### PageResponse
+PageResponse is to be embedded in gRPC response messages where the
+corresponding request message has used PageRequest.
+
+ message SomeResponse {
+         repeated Bar results = 1;
+         PageResponse page = 2;
+ }
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `next_key` | [bytes](#bytes) |  | next_key is the key to be passed to PageRequest.key to query the next page most efficiently |
+| `total` | [uint64](#uint64) |  | total is total number of results available if PageRequest.count_total was set, its value is undefined otherwise |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+ <!-- end services -->
+
+
+
 <a name="cosmos/auth/v1beta1/query.proto"></a>
 <p align="right"><a href="#top">Top</a></p>
 
@@ -826,6 +923,37 @@ QueryAccountResponse is the response type for the Query/Account RPC method.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `account` | [google.protobuf.Any](#google.protobuf.Any) |  | account defines the account of the corresponding address. |
+
+
+
+
+
+
+<a name="cosmos.auth.v1beta1.QueryAccountsRequest"></a>
+
+### QueryAccountsRequest
+QueryAccountsRequest is the request type for the Query/Accounts RPC method.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `pagination` | [cosmos.base.query.v1beta1.PageRequest](#cosmos.base.query.v1beta1.PageRequest) |  | pagination defines an optional pagination for the request. |
+
+
+
+
+
+
+<a name="cosmos.auth.v1beta1.QueryAccountsResponse"></a>
+
+### QueryAccountsResponse
+QueryAccountsResponse is the response type for the Query/Accounts RPC method.
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `accounts` | [google.protobuf.Any](#google.protobuf.Any) | repeated | accounts are the existing accounts |
+| `pagination` | [cosmos.base.query.v1beta1.PageResponse](#cosmos.base.query.v1beta1.PageResponse) |  | pagination defines the pagination in the response. |
 
 
 
@@ -870,6 +998,7 @@ Query defines the gRPC querier service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `Accounts` | [QueryAccountsRequest](#cosmos.auth.v1beta1.QueryAccountsRequest) | [QueryAccountsResponse](#cosmos.auth.v1beta1.QueryAccountsResponse) | Accounts returns all the existing accounts | GET|/cosmos/auth/v1beta1/accounts|
 | `Account` | [QueryAccountRequest](#cosmos.auth.v1beta1.QueryAccountRequest) | [QueryAccountResponse](#cosmos.auth.v1beta1.QueryAccountResponse) | Account returns account details based on address. | GET|/cosmos/auth/v1beta1/accounts/{address}|
 | `Params` | [QueryParamsRequest](#cosmos.auth.v1beta1.QueryParamsRequest) | [QueryParamsResponse](#cosmos.auth.v1beta1.QueryParamsResponse) | Params queries all parameters. | GET|/cosmos/auth/v1beta1/params|
 
@@ -1129,70 +1258,8 @@ GenesisState defines the bank module's genesis state.
 | ----- | ---- | ----- | ----------- |
 | `params` | [Params](#cosmos.bank.v1beta1.Params) |  | params defines all the paramaters of the module. |
 | `balances` | [Balance](#cosmos.bank.v1beta1.Balance) | repeated | balances is an array containing the balances of all the accounts. |
-| `supply` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated | supply represents the total supply. |
+| `supply` | [cosmos.base.v1beta1.Coin](#cosmos.base.v1beta1.Coin) | repeated | supply represents the total supply. If it is left empty, then supply will be calculated based on the provided balances. Otherwise, it will be used to validate that the sum of the balances equals this amount. |
 | `denom_metadata` | [Metadata](#cosmos.bank.v1beta1.Metadata) | repeated | denom_metadata defines the metadata of the differents coins. |
-
-
-
-
-
- <!-- end messages -->
-
- <!-- end enums -->
-
- <!-- end HasExtensions -->
-
- <!-- end services -->
-
-
-
-<a name="cosmos/base/query/v1beta1/pagination.proto"></a>
-<p align="right"><a href="#top">Top</a></p>
-
-## cosmos/base/query/v1beta1/pagination.proto
-
-
-
-<a name="cosmos.base.query.v1beta1.PageRequest"></a>
-
-### PageRequest
-PageRequest is to be embedded in gRPC request messages for efficient
-pagination. Ex:
-
- message SomeRequest {
-         Foo some_parameter = 1;
-         PageRequest pagination = 2;
- }
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `key` | [bytes](#bytes) |  | key is a value returned in PageResponse.next_key to begin querying the next page most efficiently. Only one of offset or key should be set. |
-| `offset` | [uint64](#uint64) |  | offset is a numeric offset that can be used when key is unavailable. It is less efficient than using key. Only one of offset or key should be set. |
-| `limit` | [uint64](#uint64) |  | limit is the total number of results to be returned in the result page. If left empty it will default to a value to be set by each app. |
-| `count_total` | [bool](#bool) |  | count_total is set to true to indicate that the result set should include a count of the total number of items available for pagination in UIs. count_total is only respected when offset is used. It is ignored when key is set. |
-
-
-
-
-
-
-<a name="cosmos.base.query.v1beta1.PageResponse"></a>
-
-### PageResponse
-PageResponse is to be embedded in gRPC response messages where the
-corresponding request message has used PageRequest.
-
- message SomeResponse {
-         repeated Bar results = 1;
-         PageResponse page = 2;
- }
-
-
-| Field | Type | Label | Description |
-| ----- | ---- | ----- | ----------- |
-| `next_key` | [bytes](#bytes) |  | next_key is the key to be passed to PageRequest.key to query the next page most efficiently |
-| `total` | [uint64](#uint64) |  | total is total number of results available if PageRequest.count_total was set, its value is undefined otherwise |
 
 
 
@@ -1437,7 +1504,7 @@ Query defines the gRPC querier service.
 
 | Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
-| `Balance` | [QueryBalanceRequest](#cosmos.bank.v1beta1.QueryBalanceRequest) | [QueryBalanceResponse](#cosmos.bank.v1beta1.QueryBalanceResponse) | Balance queries the balance of a single coin for a single account. | GET|/cosmos/bank/v1beta1/balances/{address}/{denom}|
+| `Balance` | [QueryBalanceRequest](#cosmos.bank.v1beta1.QueryBalanceRequest) | [QueryBalanceResponse](#cosmos.bank.v1beta1.QueryBalanceResponse) | Balance queries the balance of a single coin for a single account. | GET|/cosmos/bank/v1beta1/balances/{address}/by_denom|
 | `AllBalances` | [QueryAllBalancesRequest](#cosmos.bank.v1beta1.QueryAllBalancesRequest) | [QueryAllBalancesResponse](#cosmos.bank.v1beta1.QueryAllBalancesResponse) | AllBalances queries the balance of all coins for a single account. | GET|/cosmos/bank/v1beta1/balances/{address}|
 | `TotalSupply` | [QueryTotalSupplyRequest](#cosmos.bank.v1beta1.QueryTotalSupplyRequest) | [QueryTotalSupplyResponse](#cosmos.bank.v1beta1.QueryTotalSupplyResponse) | TotalSupply queries the total supply of all coins. | GET|/cosmos/bank/v1beta1/supply|
 | `SupplyOf` | [QuerySupplyOfRequest](#cosmos.bank.v1beta1.QuerySupplyOfRequest) | [QuerySupplyOfResponse](#cosmos.bank.v1beta1.QuerySupplyOfResponse) | SupplyOf queries the supply of a single coin. | GET|/cosmos/bank/v1beta1/supply/{denom}|
@@ -1711,6 +1778,9 @@ tags are stringified and the log is JSON decoded.
 | `gas_used` | [int64](#int64) |  | Amount of gas consumed by transaction. |
 | `tx` | [google.protobuf.Any](#google.protobuf.Any) |  | The request transaction bytes. |
 | `timestamp` | [string](#string) |  | Time of the previous block. For heights > 1, it's the weighted median of the timestamps of the valid votes in the block.LastCommit. For height == 1, it's genesis time. |
+| `events` | [tendermint.abci.Event](#tendermint.abci.Event) | repeated | Events defines all the events emitted by processing a transaction. Note, these events include those emitted by processing all the messages and those emitted from the ante handler. Whereas Logs contains the events, with additional metadata, emitted only by processing the messages.
+
+Since: cosmos-sdk 0.42.11, 0.44.5, 0.45 |
 
 
 
@@ -1852,6 +1922,419 @@ ReflectionService defines a service for interface reflection.
 | ----------- | ------------ | ------------- | ------------| ------- | -------- |
 | `ListAllInterfaces` | [ListAllInterfacesRequest](#cosmos.base.reflection.v1beta1.ListAllInterfacesRequest) | [ListAllInterfacesResponse](#cosmos.base.reflection.v1beta1.ListAllInterfacesResponse) | ListAllInterfaces lists all the interfaces registered in the interface registry. | GET|/cosmos/base/reflection/v1beta1/interfaces|
 | `ListImplementations` | [ListImplementationsRequest](#cosmos.base.reflection.v1beta1.ListImplementationsRequest) | [ListImplementationsResponse](#cosmos.base.reflection.v1beta1.ListImplementationsResponse) | ListImplementations list all the concrete types that implement a given interface. | GET|/cosmos/base/reflection/v1beta1/interfaces/{interface_name}/implementations|
+
+ <!-- end services -->
+
+
+
+<a name="cosmos/base/reflection/v2alpha1/reflection.proto"></a>
+<p align="right"><a href="#top">Top</a></p>
+
+## cosmos/base/reflection/v2alpha1/reflection.proto
+Since: cosmos-sdk 0.43
+
+
+<a name="cosmos.base.reflection.v2alpha1.AppDescriptor"></a>
+
+### AppDescriptor
+AppDescriptor describes a cosmos-sdk based application
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `authn` | [AuthnDescriptor](#cosmos.base.reflection.v2alpha1.AuthnDescriptor) |  | AuthnDescriptor provides information on how to authenticate transactions on the application NOTE: experimental and subject to change in future releases. |
+| `chain` | [ChainDescriptor](#cosmos.base.reflection.v2alpha1.ChainDescriptor) |  | chain provides the chain descriptor |
+| `codec` | [CodecDescriptor](#cosmos.base.reflection.v2alpha1.CodecDescriptor) |  | codec provides metadata information regarding codec related types |
+| `configuration` | [ConfigurationDescriptor](#cosmos.base.reflection.v2alpha1.ConfigurationDescriptor) |  | configuration provides metadata information regarding the sdk.Config type |
+| `query_services` | [QueryServicesDescriptor](#cosmos.base.reflection.v2alpha1.QueryServicesDescriptor) |  | query_services provides metadata information regarding the available queriable endpoints |
+| `tx` | [TxDescriptor](#cosmos.base.reflection.v2alpha1.TxDescriptor) |  | tx provides metadata information regarding how to send transactions to the given application |
+
+
+
+
+
+
+<a name="cosmos.base.reflection.v2alpha1.AuthnDescriptor"></a>
+
+### AuthnDescriptor
+AuthnDescriptor provides information on how to sign transactions without relying
+on the online RPCs GetTxMetadata and CombineUnsignedTxAndSignatures
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `sign_modes` | [SigningModeDescriptor](#cosmos.base.reflection.v2alpha1.SigningModeDescriptor) | repeated | sign_modes defines the supported signature algorithm |
+
+
+
+
+
+
+<a name="cosmos.base.reflection.v2alpha1.ChainDescriptor"></a>
+
+### ChainDescriptor
+ChainDescriptor describes chain information of the application
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `id` | [string](#string) |  | id is the chain id |
+
+
+
+
+
+
+<a name="cosmos.base.reflection.v2alpha1.CodecDescriptor"></a>
+
+### CodecDescriptor
+CodecDescriptor describes the registered interfaces and provides metadata information on the types
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `interfaces` | [InterfaceDescriptor](#cosmos.base.reflection.v2alpha1.InterfaceDescriptor) | repeated | interfaces is a list of the registerted interfaces descriptors |
+
+
+
+
+
+
+<a name="cosmos.base.reflection.v2alpha1.ConfigurationDescriptor"></a>
+
+### ConfigurationDescriptor
+ConfigurationDescriptor contains metadata information on the sdk.Config
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `bech32_account_address_prefix` | [string](#string) |  | bech32_account_address_prefix is the account address prefix |
+
+
+
+
+
+
+<a name="cosmos.base.reflection.v2alpha1.GetAuthnDescriptorRequest"></a>
+
+### GetAuthnDescriptorRequest
+GetAuthnDescriptorRequest is the request used for the GetAuthnDescriptor RPC
+
+
+
+
+
+
+<a name="cosmos.base.reflection.v2alpha1.GetAuthnDescriptorResponse"></a>
+
+### GetAuthnDescriptorResponse
+GetAuthnDescriptorResponse is the response returned by the GetAuthnDescriptor RPC
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `authn` | [AuthnDescriptor](#cosmos.base.reflection.v2alpha1.AuthnDescriptor) |  | authn describes how to authenticate to the application when sending transactions |
+
+
+
+
+
+
+<a name="cosmos.base.reflection.v2alpha1.GetChainDescriptorRequest"></a>
+
+### GetChainDescriptorRequest
+GetChainDescriptorRequest is the request used for the GetChainDescriptor RPC
+
+
+
+
+
+
+<a name="cosmos.base.reflection.v2alpha1.GetChainDescriptorResponse"></a>
+
+### GetChainDescriptorResponse
+GetChainDescriptorResponse is the response returned by the GetChainDescriptor RPC
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `chain` | [ChainDescriptor](#cosmos.base.reflection.v2alpha1.ChainDescriptor) |  | chain describes application chain information |
+
+
+
+
+
+
+<a name="cosmos.base.reflection.v2alpha1.GetCodecDescriptorRequest"></a>
+
+### GetCodecDescriptorRequest
+GetCodecDescriptorRequest is the request used for the GetCodecDescriptor RPC
+
+
+
+
+
+
+<a name="cosmos.base.reflection.v2alpha1.GetCodecDescriptorResponse"></a>
+
+### GetCodecDescriptorResponse
+GetCodecDescriptorResponse is the response returned by the GetCodecDescriptor RPC
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `codec` | [CodecDescriptor](#cosmos.base.reflection.v2alpha1.CodecDescriptor) |  | codec describes the application codec such as registered interfaces and implementations |
+
+
+
+
+
+
+<a name="cosmos.base.reflection.v2alpha1.GetConfigurationDescriptorRequest"></a>
+
+### GetConfigurationDescriptorRequest
+GetConfigurationDescriptorRequest is the request used for the GetConfigurationDescriptor RPC
+
+
+
+
+
+
+<a name="cosmos.base.reflection.v2alpha1.GetConfigurationDescriptorResponse"></a>
+
+### GetConfigurationDescriptorResponse
+GetConfigurationDescriptorResponse is the response returned by the GetConfigurationDescriptor RPC
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `config` | [ConfigurationDescriptor](#cosmos.base.reflection.v2alpha1.ConfigurationDescriptor) |  | config describes the application's sdk.Config |
+
+
+
+
+
+
+<a name="cosmos.base.reflection.v2alpha1.GetQueryServicesDescriptorRequest"></a>
+
+### GetQueryServicesDescriptorRequest
+GetQueryServicesDescriptorRequest is the request used for the GetQueryServicesDescriptor RPC
+
+
+
+
+
+
+<a name="cosmos.base.reflection.v2alpha1.GetQueryServicesDescriptorResponse"></a>
+
+### GetQueryServicesDescriptorResponse
+GetQueryServicesDescriptorResponse is the response returned by the GetQueryServicesDescriptor RPC
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `queries` | [QueryServicesDescriptor](#cosmos.base.reflection.v2alpha1.QueryServicesDescriptor) |  | queries provides information on the available queryable services |
+
+
+
+
+
+
+<a name="cosmos.base.reflection.v2alpha1.GetTxDescriptorRequest"></a>
+
+### GetTxDescriptorRequest
+GetTxDescriptorRequest is the request used for the GetTxDescriptor RPC
+
+
+
+
+
+
+<a name="cosmos.base.reflection.v2alpha1.GetTxDescriptorResponse"></a>
+
+### GetTxDescriptorResponse
+GetTxDescriptorResponse is the response returned by the GetTxDescriptor RPC
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `tx` | [TxDescriptor](#cosmos.base.reflection.v2alpha1.TxDescriptor) |  | tx provides information on msgs that can be forwarded to the application alongside the accepted transaction protobuf type |
+
+
+
+
+
+
+<a name="cosmos.base.reflection.v2alpha1.InterfaceAcceptingMessageDescriptor"></a>
+
+### InterfaceAcceptingMessageDescriptor
+InterfaceAcceptingMessageDescriptor describes a protobuf message which contains
+an interface represented as a google.protobuf.Any
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `fullname` | [string](#string) |  | fullname is the protobuf fullname of the type containing the interface |
+| `field_descriptor_names` | [string](#string) | repeated | field_descriptor_names is a list of the protobuf name (not fullname) of the field which contains the interface as google.protobuf.Any (the interface is the same, but it can be in multiple fields of the same proto message) |
+
+
+
+
+
+
+<a name="cosmos.base.reflection.v2alpha1.InterfaceDescriptor"></a>
+
+### InterfaceDescriptor
+InterfaceDescriptor describes the implementation of an interface
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `fullname` | [string](#string) |  | fullname is the name of the interface |
+| `interface_accepting_messages` | [InterfaceAcceptingMessageDescriptor](#cosmos.base.reflection.v2alpha1.InterfaceAcceptingMessageDescriptor) | repeated | interface_accepting_messages contains information regarding the proto messages which contain the interface as google.protobuf.Any field |
+| `interface_implementers` | [InterfaceImplementerDescriptor](#cosmos.base.reflection.v2alpha1.InterfaceImplementerDescriptor) | repeated | interface_implementers is a list of the descriptors of the interface implementers |
+
+
+
+
+
+
+<a name="cosmos.base.reflection.v2alpha1.InterfaceImplementerDescriptor"></a>
+
+### InterfaceImplementerDescriptor
+InterfaceImplementerDescriptor describes an interface implementer
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `fullname` | [string](#string) |  | fullname is the protobuf queryable name of the interface implementer |
+| `type_url` | [string](#string) |  | type_url defines the type URL used when marshalling the type as any this is required so we can provide type safe google.protobuf.Any marshalling and unmarshalling, making sure that we don't accept just 'any' type in our interface fields |
+
+
+
+
+
+
+<a name="cosmos.base.reflection.v2alpha1.MsgDescriptor"></a>
+
+### MsgDescriptor
+MsgDescriptor describes a cosmos-sdk message that can be delivered with a transaction
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `msg_type_url` | [string](#string) |  | msg_type_url contains the TypeURL of a sdk.Msg. |
+
+
+
+
+
+
+<a name="cosmos.base.reflection.v2alpha1.QueryMethodDescriptor"></a>
+
+### QueryMethodDescriptor
+QueryMethodDescriptor describes a queryable method of a query service
+no other info is provided beside method name and tendermint queryable path
+because it would be redundant with the grpc reflection service
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `name` | [string](#string) |  | name is the protobuf name (not fullname) of the method |
+| `full_query_path` | [string](#string) |  | full_query_path is the path that can be used to query this method via tendermint abci.Query |
+
+
+
+
+
+
+<a name="cosmos.base.reflection.v2alpha1.QueryServiceDescriptor"></a>
+
+### QueryServiceDescriptor
+QueryServiceDescriptor describes a cosmos-sdk queryable service
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `fullname` | [string](#string) |  | fullname is the protobuf fullname of the service descriptor |
+| `is_module` | [bool](#bool) |  | is_module describes if this service is actually exposed by an application's module |
+| `methods` | [QueryMethodDescriptor](#cosmos.base.reflection.v2alpha1.QueryMethodDescriptor) | repeated | methods provides a list of query service methods |
+
+
+
+
+
+
+<a name="cosmos.base.reflection.v2alpha1.QueryServicesDescriptor"></a>
+
+### QueryServicesDescriptor
+QueryServicesDescriptor contains the list of cosmos-sdk queriable services
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `query_services` | [QueryServiceDescriptor](#cosmos.base.reflection.v2alpha1.QueryServiceDescriptor) | repeated | query_services is a list of cosmos-sdk QueryServiceDescriptor |
+
+
+
+
+
+
+<a name="cosmos.base.reflection.v2alpha1.SigningModeDescriptor"></a>
+
+### SigningModeDescriptor
+SigningModeDescriptor provides information on a signing flow of the application
+NOTE(fdymylja): here we could go as far as providing an entire flow on how
+to sign a message given a SigningModeDescriptor, but it's better to think about
+this another time
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `name` | [string](#string) |  | name defines the unique name of the signing mode |
+| `number` | [int32](#int32) |  | number is the unique int32 identifier for the sign_mode enum |
+| `authn_info_provider_method_fullname` | [string](#string) |  | authn_info_provider_method_fullname defines the fullname of the method to call to get the metadata required to authenticate using the provided sign_modes |
+
+
+
+
+
+
+<a name="cosmos.base.reflection.v2alpha1.TxDescriptor"></a>
+
+### TxDescriptor
+TxDescriptor describes the accepted transaction type
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `fullname` | [string](#string) |  | fullname is the protobuf fullname of the raw transaction type (for instance the tx.Tx type) it is not meant to support polymorphism of transaction types, it is supposed to be used by reflection clients to understand if they can handle a specific transaction type in an application. |
+| `msgs` | [MsgDescriptor](#cosmos.base.reflection.v2alpha1.MsgDescriptor) | repeated | msgs lists the accepted application messages (sdk.Msg) |
+
+
+
+
+
+ <!-- end messages -->
+
+ <!-- end enums -->
+
+ <!-- end HasExtensions -->
+
+
+<a name="cosmos.base.reflection.v2alpha1.ReflectionService"></a>
+
+### ReflectionService
+ReflectionService defines a service for application reflection.
+
+| Method Name | Request Type | Response Type | Description | HTTP Verb | Endpoint |
+| ----------- | ------------ | ------------- | ------------| ------- | -------- |
+| `GetAuthnDescriptor` | [GetAuthnDescriptorRequest](#cosmos.base.reflection.v2alpha1.GetAuthnDescriptorRequest) | [GetAuthnDescriptorResponse](#cosmos.base.reflection.v2alpha1.GetAuthnDescriptorResponse) | GetAuthnDescriptor returns information on how to authenticate transactions in the application NOTE: this RPC is still experimental and might be subject to breaking changes or removal in future releases of the cosmos-sdk. | GET|/cosmos/base/reflection/v1beta1/app_descriptor/authn|
+| `GetChainDescriptor` | [GetChainDescriptorRequest](#cosmos.base.reflection.v2alpha1.GetChainDescriptorRequest) | [GetChainDescriptorResponse](#cosmos.base.reflection.v2alpha1.GetChainDescriptorResponse) | GetChainDescriptor returns the description of the chain | GET|/cosmos/base/reflection/v1beta1/app_descriptor/chain|
+| `GetCodecDescriptor` | [GetCodecDescriptorRequest](#cosmos.base.reflection.v2alpha1.GetCodecDescriptorRequest) | [GetCodecDescriptorResponse](#cosmos.base.reflection.v2alpha1.GetCodecDescriptorResponse) | GetCodecDescriptor returns the descriptor of the codec of the application | GET|/cosmos/base/reflection/v1beta1/app_descriptor/codec|
+| `GetConfigurationDescriptor` | [GetConfigurationDescriptorRequest](#cosmos.base.reflection.v2alpha1.GetConfigurationDescriptorRequest) | [GetConfigurationDescriptorResponse](#cosmos.base.reflection.v2alpha1.GetConfigurationDescriptorResponse) | GetConfigurationDescriptor returns the descriptor for the sdk.Config of the application | GET|/cosmos/base/reflection/v1beta1/app_descriptor/configuration|
+| `GetQueryServicesDescriptor` | [GetQueryServicesDescriptorRequest](#cosmos.base.reflection.v2alpha1.GetQueryServicesDescriptorRequest) | [GetQueryServicesDescriptorResponse](#cosmos.base.reflection.v2alpha1.GetQueryServicesDescriptorResponse) | GetQueryServicesDescriptor returns the available gRPC queryable services of the application | GET|/cosmos/base/reflection/v1beta1/app_descriptor/query_services|
+| `GetTxDescriptor` | [GetTxDescriptorRequest](#cosmos.base.reflection.v2alpha1.GetTxDescriptorRequest) | [GetTxDescriptorResponse](#cosmos.base.reflection.v2alpha1.GetTxDescriptorResponse) | GetTxDescriptor returns information on the used transaction object and available msgs that can be used | GET|/cosmos/base/reflection/v1beta1/app_descriptor/tx_descriptor|
 
  <!-- end services -->
 
@@ -2269,7 +2752,7 @@ VersionInfo is the type for the GetNodeInfoResponse message.
 | `build_tags` | [string](#string) |  |  |
 | `go_version` | [string](#string) |  |  |
 | `build_deps` | [Module](#cosmos.base.tendermint.v1beta1.Module) | repeated |  |
-| `cosmos_sdk_version` | [string](#string) |  |  |
+| `cosmos_sdk_version` | [string](#string) |  | Since: cosmos-sdk 0.43 |
 
 
 
@@ -4740,11 +5223,11 @@ liveness activity.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `address` | [string](#string) |  |  |
-| `start_height` | [int64](#int64) |  | height at which validator was first a candidate OR was unjailed |
-| `index_offset` | [int64](#int64) |  | index offset into signed block bit array |
-| `jailed_until` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  | timestamp validator cannot be unjailed until |
-| `tombstoned` | [bool](#bool) |  | whether or not a validator has been tombstoned (killed out of validator set) |
-| `missed_blocks_counter` | [int64](#int64) |  | missed blocks counter (to avoid scanning the array every time) |
+| `start_height` | [int64](#int64) |  | Height at which validator was first a candidate OR was unjailed |
+| `index_offset` | [int64](#int64) |  | Index which is incremented each time the validator was a bonded in a block and may have signed a precommit or not. This in conjunction with the `SignedBlocksWindow` param determines the index in the `MissedBlocksBitArray`. |
+| `jailed_until` | [google.protobuf.Timestamp](#google.protobuf.Timestamp) |  | Timestamp until which the validator is jailed due to liveness downtime. |
+| `tombstoned` | [bool](#bool) |  | Whether or not a validator has been tombstoned (killed out of validator set). It is set once the validator commits an equivocation or for any other configured misbehiavor. |
+| `missed_blocks_counter` | [int64](#int64) |  | A counter kept to avoid unnecessary array reads. Note that `Sum(MissedBlocksBitArray)` always equals `MissedBlocksCounter`. |
 
 
 
@@ -4777,7 +5260,7 @@ GenesisState defines the slashing module's genesis state.
 | ----- | ---- | ----- | ----------- |
 | `params` | [Params](#cosmos.slashing.v1beta1.Params) |  | params defines all the paramaters of related to deposit. |
 | `signing_infos` | [SigningInfo](#cosmos.slashing.v1beta1.SigningInfo) | repeated | signing_infos represents a map between validator addresses and their signing infos. |
-| `missed_blocks` | [ValidatorMissedBlocks](#cosmos.slashing.v1beta1.ValidatorMissedBlocks) | repeated | signing_infos represents a map between validator addresses and their missed blocks. |
+| `missed_blocks` | [ValidatorMissedBlocks](#cosmos.slashing.v1beta1.ValidatorMissedBlocks) | repeated | missed_blocks represents a map between validator addresses and their missed blocks. |
 
 
 
@@ -6485,6 +6968,45 @@ Service.BroadcastTx method.
 
 
 
+<a name="cosmos.tx.v1beta1.GetBlockWithTxsRequest"></a>
+
+### GetBlockWithTxsRequest
+GetBlockWithTxsRequest is the request type for the Service.GetBlockWithTxs
+RPC method.
+
+Since: cosmos-sdk 0.45.2
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `height` | [int64](#int64) |  | height is the height of the block to query. |
+| `pagination` | [cosmos.base.query.v1beta1.PageRequest](#cosmos.base.query.v1beta1.PageRequest) |  | pagination defines a pagination for the request. |
+
+
+
+
+
+
+<a name="cosmos.tx.v1beta1.GetBlockWithTxsResponse"></a>
+
+### GetBlockWithTxsResponse
+GetBlockWithTxsResponse is the response type for the Service.GetBlockWithTxs method.
+
+Since: cosmos-sdk 0.45.2
+
+
+| Field | Type | Label | Description |
+| ----- | ---- | ----- | ----------- |
+| `txs` | [Tx](#cosmos.tx.v1beta1.Tx) | repeated | txs are the transactions in the block. |
+| `block_id` | [tendermint.types.BlockID](#tendermint.types.BlockID) |  |  |
+| `block` | [tendermint.types.Block](#tendermint.types.Block) |  |  |
+| `pagination` | [cosmos.base.query.v1beta1.PageResponse](#cosmos.base.query.v1beta1.PageResponse) |  | pagination defines a pagination for the response. |
+
+
+
+
+
+
 <a name="cosmos.tx.v1beta1.GetTxRequest"></a>
 
 ### GetTxRequest
@@ -6527,7 +7049,7 @@ RPC method.
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
 | `events` | [string](#string) | repeated | events is the list of transaction event type. |
-| `pagination` | [cosmos.base.query.v1beta1.PageRequest](#cosmos.base.query.v1beta1.PageRequest) |  | pagination defines an pagination for the request. |
+| `pagination` | [cosmos.base.query.v1beta1.PageRequest](#cosmos.base.query.v1beta1.PageRequest) |  | pagination defines a pagination for the request. |
 | `order_by` | [OrderBy](#cosmos.tx.v1beta1.OrderBy) |  |  |
 
 
@@ -6546,7 +7068,7 @@ RPC method.
 | ----- | ---- | ----- | ----------- |
 | `txs` | [Tx](#cosmos.tx.v1beta1.Tx) | repeated | txs is the list of queried transactions. |
 | `tx_responses` | [cosmos.base.abci.v1beta1.TxResponse](#cosmos.base.abci.v1beta1.TxResponse) | repeated | tx_responses is the list of queried TxResponses. |
-| `pagination` | [cosmos.base.query.v1beta1.PageResponse](#cosmos.base.query.v1beta1.PageResponse) |  | pagination defines an pagination for the response. |
+| `pagination` | [cosmos.base.query.v1beta1.PageResponse](#cosmos.base.query.v1beta1.PageResponse) |  | pagination defines a pagination for the response. |
 
 
 
@@ -6562,7 +7084,10 @@ RPC method.
 
 | Field | Type | Label | Description |
 | ----- | ---- | ----- | ----------- |
-| `tx` | [Tx](#cosmos.tx.v1beta1.Tx) |  | tx is the transaction to simulate. |
+| `tx` | [Tx](#cosmos.tx.v1beta1.Tx) |  | **Deprecated.** tx is the transaction to simulate. Deprecated. Send raw tx bytes instead. |
+| `tx_bytes` | [bytes](#bytes) |  | tx_bytes is the raw transaction.
+
+Since: cosmos-sdk 0.43 |
 
 
 
@@ -6630,6 +7155,9 @@ Service defines a gRPC service for interacting with transactions.
 | `GetTx` | [GetTxRequest](#cosmos.tx.v1beta1.GetTxRequest) | [GetTxResponse](#cosmos.tx.v1beta1.GetTxResponse) | GetTx fetches a tx by hash. | GET|/cosmos/tx/v1beta1/txs/{hash}|
 | `BroadcastTx` | [BroadcastTxRequest](#cosmos.tx.v1beta1.BroadcastTxRequest) | [BroadcastTxResponse](#cosmos.tx.v1beta1.BroadcastTxResponse) | BroadcastTx broadcast transaction. | POST|/cosmos/tx/v1beta1/txs|
 | `GetTxsEvent` | [GetTxsEventRequest](#cosmos.tx.v1beta1.GetTxsEventRequest) | [GetTxsEventResponse](#cosmos.tx.v1beta1.GetTxsEventResponse) | GetTxsEvent fetches txs by event. | GET|/cosmos/tx/v1beta1/txs|
+| `GetBlockWithTxs` | [GetBlockWithTxsRequest](#cosmos.tx.v1beta1.GetBlockWithTxsRequest) | [GetBlockWithTxsResponse](#cosmos.tx.v1beta1.GetBlockWithTxsResponse) | GetBlockWithTxs fetches a block with decoded txs.
+
+Since: cosmos-sdk 0.45.2 | GET|/cosmos/tx/v1beta1/txs/block/{height}|
 
  <!-- end services -->
 
@@ -9999,3 +10527,4 @@ that implements Misbehaviour interface expected by ICS-02
 | <a name="bool" /> bool |  | bool | boolean | boolean | bool | bool | boolean | TrueClass/FalseClass |
 | <a name="string" /> string | A string must always contain UTF-8 encoded or 7-bit ASCII text. | string | String | str/unicode | string | string | string | String (UTF-8) |
 | <a name="bytes" /> bytes | May contain any arbitrary sequence of bytes. | string | ByteString | str | []byte | ByteString | string | String (ASCII-8BIT) |
+
