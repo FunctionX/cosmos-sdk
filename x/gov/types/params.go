@@ -25,9 +25,10 @@ var (
 
 // Parameter store key
 var (
-	ParamStoreKeyDepositParams = []byte("depositparams")
-	ParamStoreKeyVotingParams  = []byte("votingparams")
-	ParamStoreKeyTallyParams   = []byte("tallyparams")
+	ParamStoreKeyDepositParams    = []byte("depositparams")
+	ParamStoreKeyVotingParams     = []byte("votingparams")
+	ParamStoreKeyTallyParams      = []byte("tallyparams")
+	ParamStoreKeyEGFDepositParams = []byte("egfDepositParams")
 )
 
 // ParamKeyTable - Key declaration for parameters

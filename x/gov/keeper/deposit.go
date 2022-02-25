@@ -2,11 +2,9 @@ package keeper
 
 import (
 	"fmt"
-	"regexp"
-	"strconv"
-
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
+	types2 "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	"github.com/cosmos/cosmos-sdk/x/gov/types"
 )
 
@@ -138,16 +136,13 @@ func (keeper Keeper) AddDeposit(ctx sdk.Context, proposalID uint64, depositorAdd
 	activatedVotingPeriod := false
 
 	if types.SupportEGFProposal(ctx, proposal.ProposalType()) {
-		_claimCoin := proposal.GetContent().String()
-		claimCoin, err := stringEGFContentStringFormatCoins(_claimCoin)
-		if err != nil {
-			return false, err
+		cpsp, ok := proposal.GetContent().(*types2.CommunityPoolSpendProposal)
+		if !ok {
+			return false, sdkerrors.Wrapf(types.ErrInvalidProposalType, "%d", proposalID)
 		}
-		totDepositProposal := types.SupportEGFProposalTotDepositProposal(sdk.Coin{Denom: depositAmount[0].Denom, Amount: sdk.NewInt(types.InitialDeposit)},
-			claimCoin)
+		totDepositProposal := keeper.SupportEGFProposalTotDepositProposal(ctx, cpsp.Amount)
 		if proposal.Status == types.StatusDepositPeriod && proposal.TotalDeposit.IsAllGTE(totDepositProposal) {
 			keeper.ActivateVotingPeriod(ctx, proposal)
-
 			activatedVotingPeriod = true
 		}
 	} else {
@@ -200,26 +195,19 @@ func (keeper Keeper) RefundDeposits(ctx sdk.Context, proposalID uint64) {
 	})
 }
 
-func stringEGFContentStringFormatCoins(contentString string) (sdk.Coin, error) {
-	if contentString == "" {
-		return sdk.Coin{}, fmt.Errorf("EGF content string fail")
+func (keeper Keeper) SupportEGFProposalTotDepositProposal(ctx sdk.Context, claimCoin sdk.Coins) sdk.Coins {
+	egfDepositParams := keeper.GetEGFDepositParams(ctx)
+	if claimCoin.IsAllLTE(egfDepositParams.DepositProposalThreshold) {
+		return egfDepositParams.InitialDeposit
 	}
-	numbers, err := extractNumbers(contentString)
-	if err != nil {
-		return sdk.Coin{}, err
+	initialDeposit := egfDepositParams.InitialDeposit
+	for _, coin := range claimCoin {
+		amount := coin.Amount.ToDec().Mul(egfDepositParams.ClaimRatio).TruncateInt()
+		for _, c := range initialDeposit {
+			if c.Denom == coin.Denom {
+				c.Amount.Add(amount)
+			}
+		}
 	}
-	denom := extractDenom(contentString)
-	return sdk.Coin{Denom: denom, Amount: sdk.NewInt(numbers)}, nil
-}
-
-func extractNumbers(target string) (int64, error) {
-	regex := `[0-9]+`
-	compile := regexp.MustCompile(regex)
-	return strconv.ParseInt(compile.FindString(target), 10, 64)
-}
-
-func extractDenom(target string) string {
-	regex := `[a-zA-Z][a-zA-Z0-9/-]{1,127}`
-	compile := regexp.MustCompile(regex)
-	return compile.FindString(target)
+	return initialDeposit
 }

@@ -1,37 +1,58 @@
 package types
 
-import sdk "github.com/cosmos/cosmos-sdk/types"
+import (
+	"fmt"
+	sdk "github.com/cosmos/cosmos-sdk/types"
+)
 
 const (
 	// ProposalTypeCommunityPoolSpend defines the type for a CommunityPoolSpendProposal
 	ProposalTypeCommunityPoolSpend = "CommunityPoolSpend"
-	InitialDeposit                 = 1000
-	EGFDepositProposalThreshold    = 100000
-	claimRatio                     = 10
+	DefaultDepositDenom            = "FX"
+	//InitialDeposit                 = 1000
+	//EGFDepositProposalThreshold    = 100000
+	//claimRatio                     = 10
 )
 
-var EGFProposalSupportBscBlock = int64(0)
-
-func SetEGFProposalSupportBscBlock(blockHeight int64) {
-	EGFProposalSupportBscBlock = blockHeight
+type EGFDepositParams struct {
+	InitialDeposit           sdk.Coins `protobuf:"bytes,1,rep,name=initial_deposit,json=initialDeposit,proto3,castrepeated=github.com/cosmos/cosmos-sdk/types.Coins" json:"initial_deposit,omitempty" yaml:"initial_deposit"`
+	ClaimRatio               sdk.Dec   `protobuf:"bytes,2,opt,name=claim_ratio,json=claimRatio,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Dec" json:"claim_ratio,omitempty" yaml:"claim_ratio"`
+	DepositProposalThreshold sdk.Coins `protobuf:"bytes,2,opt,name=deposit_proposal_threshold,json=depositProposalThreshold,proto3,castrepeated=github.com/cosmos/cosmos-sdk/types.Coins" json:"deposit_proposal_threshold,omitempty" yaml:"deposit_proposal_threshold"`
 }
 
-func getEGFProposalSupportBscBlock() int64 {
-	return EGFProposalSupportBscBlock
+func validateEGFPDepositParams(i interface{}) error {
+	v, ok := i.(EGFDepositParams)
+	if !ok {
+		return fmt.Errorf("invalid parameter type: %T", i)
+	}
+	if !v.InitialDeposit.IsValid() {
+		return fmt.Errorf("invalid minimum deposit: %s", v.InitialDeposit)
+	}
+	if v.DepositProposalThreshold.IsValid() {
+		return fmt.Errorf("invalid EGF Proposal deposit threshold: %s", v.DepositProposalThreshold)
+	}
+	if !v.ClaimRatio.IsPositive() {
+		return fmt.Errorf("claim ratio must be positive: %s", v.ClaimRatio)
+	}
+	if v.ClaimRatio.GT(sdk.OneDec()) {
+		return fmt.Errorf("claim ratio too large: %s", v.ClaimRatio)
+	}
+	return nil
+}
+
+var EGFProposalSupportBlock = int64(0)
+
+func SetEGFProposalSupportBlock(blockHeight int64) {
+	EGFProposalSupportBlock = blockHeight
+}
+
+func getEGFProposalSupportBlock() int64 {
+	return EGFProposalSupportBlock
 }
 
 func SupportEGFProposal(ctx sdk.Context, proposalType string) bool {
-	if EGFProposalSupportBscBlock > 0 && ctx.BlockHeight() > getEGFProposalSupportBscBlock() && ProposalTypeCommunityPoolSpend == proposalType {
+	if EGFProposalSupportBlock > 0 && ctx.BlockHeight() > getEGFProposalSupportBlock() && ProposalTypeCommunityPoolSpend == proposalType {
 		return true
 	}
 	return false
-}
-
-func SupportEGFProposalTotDepositProposal(initialDeposit, claimCoin sdk.Coin) sdk.Coins {
-	if claimCoin.Amount.LTE(sdk.NewInt(EGFDepositProposalThreshold)) {
-		return sdk.Coins{initialDeposit}
-	}
-	amount := claimCoin.Amount.Quo(sdk.NewInt(claimRatio))
-	coin := initialDeposit.Add(sdk.Coin{Denom: initialDeposit.Denom, Amount: amount})
-	return sdk.Coins{coin}
 }
