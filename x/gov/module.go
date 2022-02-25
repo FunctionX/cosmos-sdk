@@ -179,8 +179,13 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONMarshaler) json
 
 // BeginBlock performs a no-op.
 func (am AppModule) BeginBlock(ctx sdk.Context, _ abci.RequestBeginBlock) {
-	if types.EGFProposalSupportBlock > 0 && ctx.BlockHeight() > types.EGFProposalSupportBlock {
-
+	// minimum collateral amount for initializing EGF proposals
+	if ctx.BlockHeight() == types.EGFProposalSupportBlock {
+		am.keeper.SetEGFDepositParams(ctx, types.EGFDepositParams{
+			InitialDeposit:           sdk.NewCoins(sdk.NewCoin("FX", sdk.NewInt(1000))),
+			ClaimRatio:               sdk.MustNewDecFromStr("0.1"),
+			DepositProposalThreshold: sdk.NewCoins(sdk.NewCoin("FX", sdk.NewInt(100000))),
+		})
 	}
 }
 

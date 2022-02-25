@@ -128,6 +128,8 @@ func (keeper Keeper) AddDeposit(ctx sdk.Context, proposalID uint64, depositorAdd
 		return false, err
 	}
 
+	// first deposit
+	first := proposal.TotalDeposit.IsZero()
 	// Update proposal
 	proposal.TotalDeposit = proposal.TotalDeposit.Add(depositAmount...)
 	keeper.SetProposal(ctx, proposal)
@@ -140,7 +142,7 @@ func (keeper Keeper) AddDeposit(ctx sdk.Context, proposalID uint64, depositorAdd
 		if !ok {
 			return false, sdkerrors.Wrapf(types.ErrInvalidProposalType, "%d", proposalID)
 		}
-		totDepositProposal := keeper.SupportEGFProposalTotDepositProposal(ctx, cpsp.Amount)
+		totDepositProposal := keeper.SupportEGFProposalTotDepositProposal(ctx, first, cpsp.Amount)
 		if proposal.Status == types.StatusDepositPeriod && proposal.TotalDeposit.IsAllGTE(totDepositProposal) {
 			keeper.ActivateVotingPeriod(ctx, proposal)
 			activatedVotingPeriod = true
@@ -195,17 +197,18 @@ func (keeper Keeper) RefundDeposits(ctx sdk.Context, proposalID uint64) {
 	})
 }
 
-func (keeper Keeper) SupportEGFProposalTotDepositProposal(ctx sdk.Context, claimCoin sdk.Coins) sdk.Coins {
+func (keeper Keeper) SupportEGFProposalTotDepositProposal(ctx sdk.Context, first bool, claimCoin sdk.Coins) sdk.Coins {
 	egfDepositParams := keeper.GetEGFDepositParams(ctx)
-	if claimCoin.IsAllLTE(egfDepositParams.DepositProposalThreshold) {
+	if claimCoin.IsAllLTE(egfDepositParams.DepositProposalThreshold) && first {
 		return egfDepositParams.InitialDeposit
 	}
 	initialDeposit := egfDepositParams.InitialDeposit
 	for _, coin := range claimCoin {
 		amount := coin.Amount.ToDec().Mul(egfDepositParams.ClaimRatio).TruncateInt()
-		for _, c := range initialDeposit {
+		for index, c := range initialDeposit {
 			if c.Denom == coin.Denom {
-				c.Amount.Add(amount)
+				c.Amount = c.Amount.Add(amount)
+				initialDeposit[index] = c
 			}
 		}
 	}

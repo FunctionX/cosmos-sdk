@@ -37,6 +37,7 @@ func ParamKeyTable() paramtypes.KeyTable {
 		paramtypes.NewParamSetPair(ParamStoreKeyDepositParams, DepositParams{}, validateDepositParams),
 		paramtypes.NewParamSetPair(ParamStoreKeyVotingParams, VotingParams{}, validateVotingParams),
 		paramtypes.NewParamSetPair(ParamStoreKeyTallyParams, TallyParams{}, validateTallyParams),
+		paramtypes.NewParamSetPair(ParamStoreKeyEGFDepositParams, EGFDepositParams{}, validateEGFPDepositParams),
 	)
 }
 
