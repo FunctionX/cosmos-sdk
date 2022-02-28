@@ -148,7 +148,8 @@ func (keeper Keeper) AddDeposit(ctx sdk.Context, proposalID uint64, depositorAdd
 			activatedVotingPeriod = true
 		}
 	} else {
-		if proposal.Status == types.StatusDepositPeriod && proposal.TotalDeposit.IsAllGTE(keeper.GetDepositParams(ctx).MinDeposit) {
+		minDeposit := keeper.GetDepositParams(ctx).MinDeposit
+		if proposal.Status == types.StatusDepositPeriod && proposal.TotalDeposit.IsAllGTE(minDeposit) {
 			keeper.ActivateVotingPeriod(ctx, proposal)
 
 			activatedVotingPeriod = true

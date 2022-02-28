@@ -6,6 +6,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"math/rand"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
@@ -182,9 +183,9 @@ func (am AppModule) BeginBlock(ctx sdk.Context, _ abci.RequestBeginBlock) {
 	// minimum collateral amount for initializing EGF proposals
 	if ctx.BlockHeight() == types.EGFProposalSupportBlock {
 		am.keeper.SetEGFDepositParams(ctx, types.EGFDepositParams{
-			InitialDeposit:           sdk.NewCoins(sdk.NewCoin("FX", sdk.NewInt(1000))),
-			ClaimRatio:               sdk.MustNewDecFromStr("0.1"),
-			DepositProposalThreshold: sdk.NewCoins(sdk.NewCoin("FX", sdk.NewInt(100000))),
+			InitialDeposit:           sdk.NewCoins(sdk.NewCoin(types.DefaultDepositDenom, sdk.NewInt(types.InitialDeposit).Mul(sdk.NewIntFromBigInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil))))),
+			ClaimRatio:               sdk.MustNewDecFromStr(types.ClaimRatio),
+			DepositProposalThreshold: sdk.NewCoins(sdk.NewCoin(types.DefaultDepositDenom, sdk.NewInt(types.EGFDepositProposalThreshold).Mul(sdk.NewIntFromBigInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil))))),
 		})
 	}
 }
