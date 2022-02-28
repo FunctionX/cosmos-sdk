@@ -178,7 +178,7 @@ func (am AppModule) ExportGenesis(ctx sdk.Context, cdc codec.JSONMarshaler) json
 	return cdc.MustMarshalJSON(gs)
 }
 
-// BeginBlock performs a no-op.
+// BeginBlock SetEGFDepositParams
 func (am AppModule) BeginBlock(ctx sdk.Context, _ abci.RequestBeginBlock) {
 	// minimum collateral amount for initializing EGF proposals
 	if ctx.BlockHeight() == types.EGFProposalSupportBlock {
