@@ -3,6 +3,8 @@ package keeper_test
 import (
 	"errors"
 	"fmt"
+	authtypes "github.com/cosmos/cosmos-sdk/x/auth/types"
+	types2 "github.com/cosmos/cosmos-sdk/x/distribution/types"
 	"strings"
 	"testing"
 	"time"
@@ -141,4 +143,57 @@ func TestGetProposalsFiltered(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestKeeper_SupportEGFProposalTotDepositProposal(t *testing.T) {
+	app := simapp.Setup(false)
+	ctx := app.BaseApp.NewContext(false, tmproto.Header{}).WithBlockHeight(100)
+
+	types.SetEGFProposalSupportBlock(100)
+	app.GovKeeper.SetEGFDepositParams(ctx, types.EGFDepositParams{
+		InitialDeposit:           sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdk.NewInt(types.InitialDeposit))),
+		ClaimRatio:               sdk.MustNewDecFromStr(types.ClaimRatio),
+		DepositProposalThreshold: sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdk.NewInt(types.EGFDepositProposalThreshold))),
+	})
+
+	address, err := sdk.AccAddressFromBech32("cosmos1t5u0jfg3ljsjrh2m9e47d4ny2hea7eehxrzdgd")
+	if err != nil {
+		t.Fatal(err)
+	}
+	fp2 := types2.FeePool{CommunityPool: sdk.DecCoins{{Denom: "stake", Amount: sdk.NewDec(10000000000000)}}}
+	app.DistrKeeper.SetFeePool(ctx, fp2)
+
+	moduleacc := authtypes.NewModuleAddress("distribution")
+	err = app.BankKeeper.AddCoins(ctx, moduleacc, sdk.NewCoins(sdk.NewCoin(app.StakingKeeper.BondDenom(ctx), sdk.NewInt(100000000000000000))))
+	if err != nil {
+		panic(err)
+	}
+	addresses := simapp.AddTestAddrsIncremental(app, ctx, 2, sdk.NewInt(100000000000000000))
+	fourStake := sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdk.NewInt(101000)))
+
+	tp := types2.NewCommunityPoolSpendProposal("test", "description", address, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdk.NewInt(1000000))))
+	proposal, err := app.GovKeeper.SubmitProposal(ctx, tp)
+	require.NoError(t, err)
+
+	require.True(t, proposal.VotingStartTime.Equal(time.Time{}))
+
+	// Check first deposit
+	votingStarted, err := app.GovKeeper.AddDeposit(ctx, proposal.ProposalId, addresses[0], fourStake)
+	require.NoError(t, err)
+
+	require.True(t, votingStarted)
+
+	app.GovKeeper.ActivateVotingPeriod(ctx, proposal)
+
+	require.True(t, proposal.VotingStartTime.Equal(ctx.BlockHeader().Time))
+
+	proposal, ok := app.GovKeeper.GetProposal(ctx, proposal.ProposalId)
+	require.True(t, ok)
+
+	activeIterator := app.GovKeeper.ActiveProposalQueueIterator(ctx, proposal.VotingEndTime)
+	require.True(t, activeIterator.Valid())
+
+	proposalID := types.GetProposalIDFromBytes(activeIterator.Value())
+	require.Equal(t, proposalID, proposal.ProposalId)
+	activeIterator.Close()
 }

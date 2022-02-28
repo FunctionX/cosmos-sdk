@@ -52,7 +52,7 @@ func getEGFProposalSupportBlock() int64 {
 }
 
 func SupportEGFProposal(ctx sdk.Context, proposalType string) bool {
-	if EGFProposalSupportBlock > 0 && ctx.BlockHeight() > getEGFProposalSupportBlock() && ProposalTypeCommunityPoolSpend == proposalType {
+	if EGFProposalSupportBlock > 0 && ctx.BlockHeight() >= getEGFProposalSupportBlock() && ProposalTypeCommunityPoolSpend == proposalType {
 		return true
 	}
 	return false
