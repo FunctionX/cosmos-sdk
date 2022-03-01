@@ -14,7 +14,7 @@ import (
 const (
 	defaultMinGasPrices = ""
 
-	// DefaultGRPCAddress is the default address the gRPC server binds to.
+	// DefaultGRPCAddress defines the default address to bind the gRPC server to.
 	DefaultGRPCAddress = "0.0.0.0:9090"
 )
 

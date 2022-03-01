@@ -36,11 +36,9 @@ func StartGRPCServer(clientCtx client.Context, app types.Application, address st
 	if err != nil {
 		return nil, err
 	}
-
 	// Reflection allows external clients to see what services and methods
 	// the gRPC server exposes.
 	gogoreflection.Register(grpcSrv)
-
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
 		return nil, err
@@ -57,7 +55,7 @@ func StartGRPCServer(clientCtx client.Context, app types.Application, address st
 	select {
 	case err := <-errCh:
 		return nil, err
-	case <-time.After(5 * time.Second): // assume server started successfully
+	case <-time.After(types.ServerStartTime): // assume server started successfully
 		return grpcSrv, nil
 	}
 }
