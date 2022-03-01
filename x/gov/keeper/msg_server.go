@@ -34,9 +34,7 @@ func (k msgServer) SubmitProposal(goCtx context.Context, msg *types.MsgSubmitPro
 	defer telemetry.IncrCounter(1, types.ModuleName, "proposal")
 
 	if types.SupportEGFProposal(ctx, proposal.ProposalType()) {
-		deposit := k.Keeper.GetEGFDepositParams(ctx).InitialDeposit
-		ctx.Logger().Info(deposit.String())
-		if msg.GetInitialDeposit().IsAllLT(deposit) {
+		if msg.GetInitialDeposit().IsAllLT(k.Keeper.GetEGFDepositParams(ctx).InitialDeposit) {
 			return nil, fmt.Errorf("initial amount too low")
 		}
 	}
