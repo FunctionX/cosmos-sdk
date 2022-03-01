@@ -29,17 +29,14 @@ func (ctx Context) Invoke(grpcCtx gocontext.Context, method string, req, reply i
 	// 1. either we're broadcasting a Tx, in which call we call Tendermint's broadcast endpoint directly,
 	// 2. or we are querying for state, in which case we call ABCI's Query.
 
-	// In both cases, we don't allow empty request req (it will panic unexpectedly).
+	// In both cases, we don't allow empty request args (it will panic unexpectedly).
 	if reflect.ValueOf(req).IsNil() {
 		return sdkerrors.Wrap(sdkerrors.ErrInvalidRequest, "request cannot be nil")
 	}
 
 	// Case 1. Broadcasting a Tx.
 	if reqProto, ok := req.(*tx.BroadcastTxRequest); ok {
-		if !ok {
-			return sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "expected %T, got %T", (*tx.BroadcastTxRequest)(nil), req)
-		}
-		resProto, ok := reply.(*tx.BroadcastTxResponse)
+		res, ok := reply.(*tx.BroadcastTxResponse)
 		if !ok {
 			return sdkerrors.Wrapf(sdkerrors.ErrInvalidRequest, "expected %T, got %T", (*tx.BroadcastTxResponse)(nil), req)
 		}
@@ -48,7 +45,7 @@ func (ctx Context) Invoke(grpcCtx gocontext.Context, method string, req, reply i
 		if err != nil {
 			return err
 		}
-		*resProto = *broadcastRes
+		*res = *broadcastRes
 
 		return err
 	}

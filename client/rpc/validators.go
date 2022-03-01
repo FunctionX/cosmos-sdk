@@ -50,7 +50,7 @@ func ValidatorCommand() *cobra.Command {
 			page, _ := cmd.Flags().GetInt(flags.FlagPage)
 			limit, _ := cmd.Flags().GetInt(flags.FlagLimit)
 
-			result, err := GetValidators(clientCtx, height, &page, &limit)
+			result, err := GetValidators(cmd.Context(), clientCtx, height, &page, &limit)
 			if err != nil {
 				return err
 			}
@@ -119,14 +119,14 @@ func validatorOutput(validator *tmtypes.Validator) (ValidatorOutput, error) {
 }
 
 // GetValidators from client
-func GetValidators(clientCtx client.Context, height *int64, page, limit *int) (ResultValidatorsOutput, error) {
+func GetValidators(ctx context.Context, clientCtx client.Context, height *int64, page, limit *int) (ResultValidatorsOutput, error) {
 	// get the node
 	node, err := clientCtx.GetNode()
 	if err != nil {
 		return ResultValidatorsOutput{}, err
 	}
 
-	validatorsRes, err := node.Validators(context.Background(), height, page, limit)
+	validatorsRes, err := node.Validators(ctx, height, page, limit)
 	if err != nil {
 		return ResultValidatorsOutput{}, err
 	}
@@ -178,7 +178,7 @@ func ValidatorSetRequestHandlerFn(clientCtx client.Context) http.HandlerFunc {
 			return
 		}
 
-		output, err := GetValidators(clientCtx, &height, &page, &limit)
+		output, err := GetValidators(r.Context(), clientCtx, &height, &page, &limit)
 		if rest.CheckInternalServerError(w, err) {
 			return
 		}
@@ -195,7 +195,7 @@ func LatestValidatorSetRequestHandlerFn(clientCtx client.Context) http.HandlerFu
 			return
 		}
 
-		output, err := GetValidators(clientCtx, nil, &page, &limit)
+		output, err := GetValidators(r.Context(), clientCtx, nil, &page, &limit)
 		if rest.CheckInternalServerError(w, err) {
 			return
 		}
