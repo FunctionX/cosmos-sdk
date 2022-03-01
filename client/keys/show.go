@@ -3,7 +3,7 @@ package keys
 import (
 	"errors"
 	"fmt"
-	keyring2 "github.com/99designs/keyring"
+
 	"github.com/spf13/cobra"
 	"github.com/tendermint/tendermint/libs/cli"
 
@@ -64,9 +64,6 @@ func runShowCmd(cmd *cobra.Command, args []string) (err error) {
 		if err != nil {
 			return fmt.Errorf("%s is not a valid name or address: %v", args[0], err)
 		}
-		if info.GetType() == keyring.TypeMulti {
-			info = keyring.NewMultiInfo(info.GetName(), info.GetPubKey())
-		}
 	} else {
 		pks := make([]cryptotypes.PubKey, len(args))
 		for i, keyref := range args {
@@ -85,7 +82,10 @@ func runShowCmd(cmd *cobra.Command, args []string) (err error) {
 		}
 
 		multikey := multisig.NewLegacyAminoPubKey(multisigThreshold, pks)
-		info = keyring.NewMultiInfo(defaultMultiSigKeyName, multikey)
+		info, err = keyring.NewMultiInfo(defaultMultiSigKeyName, multikey)
+		if err != nil {
+			return err
+		}
 	}
 
 	isShowAddr, _ := cmd.Flags().GetBool(FlagAddress)
@@ -154,7 +154,7 @@ func fetchKey(kb keyring.Keyring, keyref string) (keyring.Info, error) {
 	info, err := kb.Key(keyref)
 	// if the key is not there or if we have a problem with a keyring itself then we move to a
 	// fallback: searching for key by address.
-	if err == nil || !sdkerr.IsOf(err, sdkerr.ErrIO, sdkerr.ErrKeyNotFound, keyring2.ErrKeyNotFound) {
+	if err == nil || !sdkerr.IsOf(err, sdkerr.ErrIO, sdkerr.ErrKeyNotFound) {
 		return info, err
 	}
 	accAddr, err := sdk.AccAddressFromBech32(keyref)

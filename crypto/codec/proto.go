@@ -10,8 +10,9 @@ import (
 
 // RegisterInterfaces registers the sdk.Tx interface.
 func RegisterInterfaces(registry codectypes.InterfaceRegistry) {
-	registry.RegisterInterface("cosmos.crypto.PubKey", (*cryptotypes.PubKey)(nil))
-	registry.RegisterImplementations((*cryptotypes.PubKey)(nil), &ed25519.PubKey{})
-	registry.RegisterImplementations((*cryptotypes.PubKey)(nil), &secp256k1.PubKey{})
-	registry.RegisterImplementations((*cryptotypes.PubKey)(nil), &multisig.LegacyAminoPubKey{})
+	var pk *cryptotypes.PubKey
+	registry.RegisterInterface("cosmos.crypto.PubKey", pk)
+	registry.RegisterImplementations(pk, &ed25519.PubKey{})
+	registry.RegisterImplementations(pk, &secp256k1.PubKey{})
+	registry.RegisterImplementations(pk, &multisig.LegacyAminoPubKey{})
 }

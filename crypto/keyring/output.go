@@ -4,6 +4,9 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
+// TODO: Move this file to client/keys
+// Use protobuf interface marshaler rather then generic JSON
+
 // KeyOutput defines a structure wrapping around an Info object used for output
 // functionality.
 type KeyOutput struct {
@@ -23,6 +26,7 @@ func NewKeyOutput(name, keyType, address, pubkey string) KeyOutput {
 		Type:    keyType,
 		Address: address,
 		PubKey:  pubkey,
+		PubKeys: make([]multisigPubKeyOutput, 0),
 	}
 }
 
