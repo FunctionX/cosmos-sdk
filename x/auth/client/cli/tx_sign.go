@@ -118,6 +118,10 @@ func makeSignBatchCmd() func(cmd *cobra.Command, args []string) error {
 				}
 			}
 
+			if err != nil {
+				return err
+			}
+
 			json, err := marshalSignatureJSON(txCfg, txBuilder, printSignatureOnly)
 			if err != nil {
 				return err
