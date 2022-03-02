@@ -22,7 +22,7 @@ import (
 // Note, that even if the update happens, it may not be successful. The header may fail
 // validation checks and an error will be returned in that case.
 func (cs ClientState) CheckProposedHeaderAndUpdateState(
-	ctx sdk.Context, cdc codec.BinaryMarshaler, clientStore sdk.KVStore,
+	ctx sdk.Context, cdc codec.BinaryCodec, clientStore sdk.KVStore,
 	header exported.Header,
 ) (exported.ClientState, exported.ConsensusState, error) {
 	tmHeader, ok := header.(*Header)

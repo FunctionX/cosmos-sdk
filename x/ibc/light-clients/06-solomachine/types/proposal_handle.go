@@ -15,7 +15,7 @@ import (
 // governance proposal, the header cannot be casted to a solo machine header, or the current
 // public key equals the new public key.
 func (cs ClientState) CheckProposedHeaderAndUpdateState(
-	ctx sdk.Context, cdc codec.BinaryMarshaler, clientStore sdk.KVStore,
+	ctx sdk.Context, cdc codec.BinaryCodec, clientStore sdk.KVStore,
 	header exported.Header,
 ) (exported.ClientState, exported.ConsensusState, error) {
 

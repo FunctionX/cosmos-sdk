@@ -93,7 +93,7 @@ func (s *IntegrationTestSuite) TestTotalSupplyGRPCHandler() {
 			resp, err := testutil.GetRequestWithHeaders(tc.url, tc.headers)
 			s.Require().NoError(err)
 
-			s.Require().NoError(val.ClientCtx.JSONMarshaler.UnmarshalJSON(resp, tc.respType))
+			s.Require().NoError(val.ClientCtx.JSONCodec.UnmarshalJSON(resp, tc.respType))
 			s.Require().Equal(tc.expected.String(), tc.respType.String())
 		})
 	}
@@ -193,9 +193,9 @@ func (s *IntegrationTestSuite) TestDenomMetadataGRPCHandler() {
 			s.Require().NoError(err)
 
 			if tc.expErr {
-				s.Require().Error(val.ClientCtx.JSONMarshaler.UnmarshalJSON(resp, tc.respType))
+				s.Require().Error(val.ClientCtx.JSONCodec.UnmarshalJSON(resp, tc.respType))
 			} else {
-				s.Require().NoError(val.ClientCtx.JSONMarshaler.UnmarshalJSON(resp, tc.respType))
+				s.Require().NoError(val.ClientCtx.JSONCodec.UnmarshalJSON(resp, tc.respType))
 				s.Require().Equal(tc.expected.String(), tc.respType.String())
 			}
 		})
@@ -256,7 +256,7 @@ func (s *IntegrationTestSuite) TestBalancesGRPCHandler() {
 			resp, err := rest.GetRequest(tc.url)
 			s.Require().NoError(err)
 
-			s.Require().NoError(val.ClientCtx.JSONMarshaler.UnmarshalJSON(resp, tc.respType))
+			s.Require().NoError(val.ClientCtx.JSONCodec.UnmarshalJSON(resp, tc.respType))
 			s.Require().Equal(tc.expected.String(), tc.respType.String())
 		})
 	}

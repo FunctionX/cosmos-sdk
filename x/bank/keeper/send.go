@@ -40,7 +40,7 @@ var _ SendKeeper = (*BaseSendKeeper)(nil)
 type BaseSendKeeper struct {
 	BaseViewKeeper
 
-	cdc        codec.BinaryMarshaler
+	cdc        codec.BinaryCodec
 	ak         types.AccountKeeper
 	storeKey   sdk.StoreKey
 	paramSpace paramtypes.Subspace
@@ -50,7 +50,7 @@ type BaseSendKeeper struct {
 }
 
 func NewBaseSendKeeper(
-	cdc codec.BinaryMarshaler, storeKey sdk.StoreKey, ak types.AccountKeeper, paramSpace paramtypes.Subspace, blockedAddrs map[string]bool,
+	cdc codec.BinaryCodec, storeKey sdk.StoreKey, ak types.AccountKeeper, paramSpace paramtypes.Subspace, blockedAddrs map[string]bool,
 ) BaseSendKeeper {
 
 	return BaseSendKeeper{
@@ -272,7 +272,7 @@ func (k BaseSendKeeper) initBalances(ctx sdk.Context, addr sdk.AccAddress, balan
 
 		// Bank invariants require to not store zero balances.
 		if !balance.IsZero() {
-			bz := k.cdc.MustMarshalBinaryBare(&balance)
+			bz := k.cdc.MustMarshal(&balance)
 			accountStore.Set([]byte(balance.Denom), bz)
 		}
 	}
@@ -290,7 +290,7 @@ func (k BaseSendKeeper) SetBalance(ctx sdk.Context, addr sdk.AccAddress, balance
 	balancesStore := prefix.NewStore(store, types.BalancesPrefix)
 	accountStore := prefix.NewStore(balancesStore, addr.Bytes())
 
-	bz := k.cdc.MustMarshalBinaryBare(&balance)
+	bz := k.cdc.MustMarshal(&balance)
 	accountStore.Set([]byte(balance.Denom), bz)
 
 	return nil

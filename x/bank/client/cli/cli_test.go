@@ -155,7 +155,7 @@ func (s *IntegrationTestSuite) TestGetBalancesCmd() {
 				s.Require().Error(err)
 			} else {
 				s.Require().NoError(err)
-				s.Require().NoError(val.ClientCtx.JSONMarshaler.UnmarshalJSON(out.Bytes(), tc.respType))
+				s.Require().NoError(val.ClientCtx.JSONCodec.UnmarshalJSON(out.Bytes(), tc.respType))
 				s.Require().Equal(tc.expected.String(), tc.respType.String())
 			}
 		})
@@ -219,7 +219,7 @@ func (s *IntegrationTestSuite) TestGetCmdQueryTotalSupply() {
 				s.Require().Error(err)
 			} else {
 				s.Require().NoError(err)
-				s.Require().NoError(clientCtx.JSONMarshaler.UnmarshalJSON(out.Bytes(), tc.respType))
+				s.Require().NoError(clientCtx.JSONCodec.UnmarshalJSON(out.Bytes(), tc.respType))
 				s.Require().Equal(tc.expected, tc.respType)
 			}
 		})
@@ -340,7 +340,7 @@ func (s *IntegrationTestSuite) TestGetCmdQueryDenomsMetadata() {
 				s.Require().Error(err)
 			} else {
 				s.Require().NoError(err)
-				s.Require().NoError(clientCtx.JSONMarshaler.UnmarshalJSON(out.Bytes(), tc.respType))
+				s.Require().NoError(clientCtx.JSONCodec.UnmarshalJSON(out.Bytes(), tc.respType))
 				s.Require().Equal(tc.expected, tc.respType)
 			}
 		})
@@ -453,7 +453,7 @@ func (s *IntegrationTestSuite) TestNewSendTxCmd() {
 			} else {
 				s.Require().NoError(err)
 
-				s.Require().NoError(clientCtx.JSONMarshaler.UnmarshalJSON(bz.Bytes(), tc.respType), bz.String())
+				s.Require().NoError(clientCtx.JSONCodec.UnmarshalJSON(bz.Bytes(), tc.respType), bz.String())
 				txResp := tc.respType.(*sdk.TxResponse)
 				s.Require().Equal(tc.expectedCode, txResp.Code)
 			}
@@ -507,7 +507,7 @@ func (s *IntegrationTestSuite) TestBankMsgService() {
 			} else {
 				s.Require().NoError(err)
 
-				s.Require().NoError(clientCtx.JSONMarshaler.UnmarshalJSON(bz.Bytes(), tc.respType), bz.String())
+				s.Require().NoError(clientCtx.JSONCodec.UnmarshalJSON(bz.Bytes(), tc.respType), bz.String())
 				txResp := tc.respType.(*sdk.TxResponse)
 				s.Require().Equal(tc.expectedCode, txResp.Code)
 				s.Require().Contains(txResp.RawLog, tc.rawLogContains)

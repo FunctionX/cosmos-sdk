@@ -36,15 +36,15 @@ func TestDecodeStore(t *testing.T) {
 	deposit := types.NewDeposit(1, delAddr1, sdk.NewCoins(sdk.NewCoin(sdk.DefaultBondDenom, sdk.OneInt())))
 	vote := types.NewVote(1, delAddr1, types.OptionYes)
 
-	proposalBz, err := cdc.MarshalBinaryBare(&proposal)
+	proposalBz, err := cdc.Marshal(&proposal)
 	require.NoError(t, err)
 
 	kvPairs := kv.Pairs{
 		Pairs: []kv.Pair{
 			{Key: types.ProposalKey(1), Value: proposalBz},
 			{Key: types.InactiveProposalQueueKey(1, endTime), Value: proposalIDBz},
-			{Key: types.DepositKey(1, delAddr1), Value: cdc.MustMarshalBinaryBare(&deposit)},
-			{Key: types.VoteKey(1, delAddr1), Value: cdc.MustMarshalBinaryBare(&vote)},
+			{Key: types.DepositKey(1, delAddr1), Value: cdc.MustMarshal(&deposit)},
+			{Key: types.VoteKey(1, delAddr1), Value: cdc.MustMarshal(&vote)},
 			{Key: []byte{0x99}, Value: []byte{0x99}},
 		},
 	}

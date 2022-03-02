@@ -97,7 +97,7 @@ func NewCreateClientCmd() *cobra.Command {
 			spc, _ := cmd.Flags().GetString(flagProofSpecs)
 			if spc == "default" {
 				specs = commitmenttypes.GetSDKSpecs()
-				// TODO migrate to use JSONMarshaler (implement MarshalJSONArray
+				// TODO migrate to use JSONCodec (implement MarshalJSONArray
 				// or wrap lists of proto.Message in some other message)
 			} else if err := legacyAmino.UnmarshalJSON([]byte(spc), &specs); err != nil {
 				// check for file path if JSON input not provided
@@ -105,7 +105,7 @@ func NewCreateClientCmd() *cobra.Command {
 				if err != nil {
 					return errors.New("neither JSON input nor path to .json file was provided for proof specs flag")
 				}
-				// TODO migrate to use JSONMarshaler (implement MarshalJSONArray
+				// TODO migrate to use JSONCodec (implement MarshalJSONArray
 				// or wrap lists of proto.Message in some other message)
 				if err := legacyAmino.UnmarshalJSON(contents, &specs); err != nil {
 					return errors.Wrap(err, "error unmarshalling proof specs file")

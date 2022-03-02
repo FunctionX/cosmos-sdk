@@ -45,7 +45,7 @@ func TestTxBuilder(t *testing.T) {
 		PubKey: pubkey,
 		Data: &signing.SingleSignatureData{
 			SignMode:  signing.SignMode_SIGN_MODE_DIRECT,
-			Signature: legacy.Cdc.MustMarshalBinaryBare(pubkey),
+			Signature: legacy.Cdc.MustMarshal(pubkey),
 		},
 		Sequence: accSeq,
 	}
@@ -58,7 +58,7 @@ func TestTxBuilder(t *testing.T) {
 		SignerInfos: signerInfo,
 	}
 
-	authInfoBytes := marshaler.MustMarshalBinaryBare(authInfo)
+	authInfoBytes := marshaler.MustMarshal(authInfo)
 
 	require.NotEmpty(t, authInfoBytes)
 
@@ -77,7 +77,7 @@ func TestTxBuilder(t *testing.T) {
 		Memo:     memo,
 		Messages: anys,
 	}
-	bodyBytes := marshaler.MustMarshalBinaryBare(txBody)
+	bodyBytes := marshaler.MustMarshal(txBody)
 	require.NotEmpty(t, bodyBytes)
 	require.Empty(t, txBuilder.getBodyBytes())
 
@@ -105,7 +105,7 @@ func TestTxBuilder(t *testing.T) {
 
 	require.Equal(t, len(msgs), len(txBuilder.GetMsgs()))
 	require.Equal(t, 1, len(txBuilder.GetPubKeys()))
-	require.Equal(t, legacy.Cdc.MustMarshalBinaryBare(pubkey), legacy.Cdc.MustMarshalBinaryBare(txBuilder.GetPubKeys()[0]))
+	require.Equal(t, legacy.Cdc.MustMarshal(pubkey), legacy.Cdc.MustMarshal(txBuilder.GetPubKeys()[0]))
 
 	any, err = codectypes.NewAnyWithValue(testdata.NewTestMsg())
 	require.NoError(t, err)
@@ -140,7 +140,7 @@ func TestBuilderValidateBasic(t *testing.T) {
 		PubKey: pubKey1,
 		Data: &signing.SingleSignatureData{
 			SignMode:  signing.SignMode_SIGN_MODE_DIRECT,
-			Signature: legacy.Cdc.MustMarshalBinaryBare(pubKey1),
+			Signature: legacy.Cdc.MustMarshal(pubKey1),
 		},
 		Sequence: 0, // Arbitrary account sequence
 	}
@@ -149,7 +149,7 @@ func TestBuilderValidateBasic(t *testing.T) {
 		PubKey: pubKey2,
 		Data: &signing.SingleSignatureData{
 			SignMode:  signing.SignMode_SIGN_MODE_DIRECT,
-			Signature: legacy.Cdc.MustMarshalBinaryBare(pubKey2),
+			Signature: legacy.Cdc.MustMarshal(pubKey2),
 		},
 		Sequence: 0, // Arbitrary account sequence
 	}

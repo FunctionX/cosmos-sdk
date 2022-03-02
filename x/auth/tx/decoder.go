@@ -8,7 +8,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/tx"
 )
 
-// DefaultTxDecoder returns a default protobuf TxDecoder using the provided Marshaler.
+// DefaultTxDecoder returns a default protobuf TxDecoder using the provided Codec.
 func DefaultTxDecoder(cdc codec.ProtoCodecMarshaler) sdk.TxDecoder {
 	return func(txBytes []byte) (sdk.Tx, error) {
 		var raw tx.TxRaw
@@ -19,7 +19,7 @@ func DefaultTxDecoder(cdc codec.ProtoCodecMarshaler) sdk.TxDecoder {
 			return nil, sdkerrors.Wrap(sdkerrors.ErrTxDecode, err.Error())
 		}
 
-		err = cdc.UnmarshalBinaryBare(txBytes, &raw)
+		err = cdc.Unmarshal(txBytes, &raw)
 		if err != nil {
 			return nil, err
 		}
@@ -32,7 +32,7 @@ func DefaultTxDecoder(cdc codec.ProtoCodecMarshaler) sdk.TxDecoder {
 			return nil, sdkerrors.Wrap(sdkerrors.ErrTxDecode, err.Error())
 		}
 
-		err = cdc.UnmarshalBinaryBare(raw.BodyBytes, &body)
+		err = cdc.Unmarshal(raw.BodyBytes, &body)
 		if err != nil {
 			return nil, sdkerrors.Wrap(sdkerrors.ErrTxDecode, err.Error())
 		}
@@ -45,7 +45,7 @@ func DefaultTxDecoder(cdc codec.ProtoCodecMarshaler) sdk.TxDecoder {
 			return nil, sdkerrors.Wrap(sdkerrors.ErrTxDecode, err.Error())
 		}
 
-		err = cdc.UnmarshalBinaryBare(raw.AuthInfoBytes, &authInfo)
+		err = cdc.Unmarshal(raw.AuthInfoBytes, &authInfo)
 		if err != nil {
 			return nil, sdkerrors.Wrap(sdkerrors.ErrTxDecode, err.Error())
 		}
@@ -65,7 +65,7 @@ func DefaultTxDecoder(cdc codec.ProtoCodecMarshaler) sdk.TxDecoder {
 	}
 }
 
-// DefaultJSONTxDecoder returns a default protobuf JSON TxDecoder using the provided Marshaler.
+// DefaultJSONTxDecoder returns a default protobuf JSON TxDecoder using the provided Codec.
 func DefaultJSONTxDecoder(cdc codec.ProtoCodecMarshaler) sdk.TxDecoder {
 	return func(txBytes []byte) (sdk.Tx, error) {
 		var theTx tx.Tx

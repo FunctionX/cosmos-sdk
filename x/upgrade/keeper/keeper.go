@@ -28,12 +28,12 @@ type Keeper struct {
 	homePath           string
 	skipUpgradeHeights map[int64]bool
 	storeKey           sdk.StoreKey
-	cdc                codec.BinaryMarshaler
+	cdc                codec.BinaryCodec
 	upgradeHandlers    map[string]types.UpgradeHandler
 }
 
 // NewKeeper constructs an upgrade Keeper
-func NewKeeper(skipUpgradeHeights map[int64]bool, storeKey sdk.StoreKey, cdc codec.BinaryMarshaler, homePath string) Keeper {
+func NewKeeper(skipUpgradeHeights map[int64]bool, storeKey sdk.StoreKey, cdc codec.BinaryCodec, homePath string) Keeper {
 	return Keeper{
 		homePath:           homePath,
 		skipUpgradeHeights: skipUpgradeHeights,
@@ -80,7 +80,7 @@ func (k Keeper) ScheduleUpgrade(ctx sdk.Context, plan types.Plan) error {
 		k.ClearIBCState(ctx, oldPlan.Height-1)
 	}
 
-	bz := k.cdc.MustMarshalBinaryBare(&plan)
+	bz := k.cdc.MustMarshal(&plan)
 	store.Set(types.PlanKey(), bz)
 
 	if plan.IsIBCPlan() {
@@ -194,7 +194,7 @@ func (k Keeper) GetUpgradePlan(ctx sdk.Context) (plan types.Plan, havePlan bool)
 		return plan, false
 	}
 
-	k.cdc.MustUnmarshalBinaryBare(bz, &plan)
+	k.cdc.MustUnmarshal(bz, &plan)
 	return plan, true
 }
 

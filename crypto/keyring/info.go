@@ -244,12 +244,12 @@ func (i multiInfo) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {
 
 // encoding info
 func marshalInfo(i Info) []byte {
-	return legacy.Cdc.MustMarshalBinaryLengthPrefixed(i)
+	return legacy.Cdc.MustMarshalLengthPrefixed(i)
 }
 
 // decoding info
 func unmarshalInfo(bz []byte) (info Info, err error) {
-	err = legacy.Cdc.UnmarshalBinaryLengthPrefixed(bz, &info)
+	err = legacy.Cdc.UnmarshalLengthPrefixed(bz, &info)
 	if err != nil {
 		return nil, err
 	}
@@ -264,7 +264,7 @@ func unmarshalInfo(bz []byte) (info Info, err error) {
 	_, ok := info.(multiInfo)
 	if ok {
 		var multi multiInfo
-		err = legacy.Cdc.UnmarshalBinaryLengthPrefixed(bz, &multi)
+		err = legacy.Cdc.UnmarshalLengthPrefixed(bz, &multi)
 
 		return multi, err
 	}
