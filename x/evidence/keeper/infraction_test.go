@@ -28,8 +28,10 @@ func (suite *KeeperTestSuite) TestHandleDoubleSign() {
 	)
 	suite.Equal(selfDelegation, suite.app.StakingKeeper.Validator(ctx, operatorAddr).GetBondedTokens())
 
+	signedBlocksWindow := suite.app.SlashingKeeper.SignedBlocksWindow(ctx)
+	minSignedPerWindow := suite.app.SlashingKeeper.MinSignedPerWindow(ctx)
 	// handle a signature to set signing info
-	suite.app.SlashingKeeper.HandleValidatorSignature(ctx, val.Address(), selfDelegation.Int64(), true)
+	suite.app.SlashingKeeper.HandleValidatorSignature(ctx, val.Address(), selfDelegation.Int64(), true, signedBlocksWindow, minSignedPerWindow)
 
 	// double sign less than max age
 	oldTokens := suite.app.StakingKeeper.Validator(ctx, operatorAddr).GetTokens()

@@ -100,10 +100,12 @@ func TestHandleNewValidator(t *testing.T) {
 	)
 	require.Equal(t, amt, app.StakingKeeper.Validator(ctx, addr).GetBondedTokens())
 
+	signedBlocksWindow := app.SlashingKeeper.SignedBlocksWindow(ctx)
+	minSignedPerWindow := app.SlashingKeeper.MinSignedPerWindow(ctx)
 	// Now a validator, for two blocks
-	app.SlashingKeeper.HandleValidatorSignature(ctx, val.Address(), 100, true)
+	app.SlashingKeeper.HandleValidatorSignature(ctx, val.Address(), 100, true, signedBlocksWindow, minSignedPerWindow)
 	ctx = ctx.WithBlockHeight(app.SlashingKeeper.SignedBlocksWindow(ctx) + 2)
-	app.SlashingKeeper.HandleValidatorSignature(ctx, val.Address(), 100, false)
+	app.SlashingKeeper.HandleValidatorSignature(ctx, val.Address(), 100, false, signedBlocksWindow, minSignedPerWindow)
 
 	info, found := app.SlashingKeeper.GetValidatorSigningInfo(ctx, sdk.ConsAddress(val.Address()))
 	require.True(t, found)
@@ -138,17 +140,19 @@ func TestHandleAlreadyJailed(t *testing.T) {
 
 	staking.EndBlocker(ctx, app.StakingKeeper)
 
+	signedBlocksWindow := app.SlashingKeeper.SignedBlocksWindow(ctx)
+	minSignedPerWindow := app.SlashingKeeper.MinSignedPerWindow(ctx)
 	// 1000 first blocks OK
 	height := int64(0)
 	for ; height < app.SlashingKeeper.SignedBlocksWindow(ctx); height++ {
 		ctx = ctx.WithBlockHeight(height)
-		app.SlashingKeeper.HandleValidatorSignature(ctx, val.Address(), power, true)
+		app.SlashingKeeper.HandleValidatorSignature(ctx, val.Address(), power, true, signedBlocksWindow, minSignedPerWindow)
 	}
 
 	// 501 blocks missed
 	for ; height < app.SlashingKeeper.SignedBlocksWindow(ctx)+(app.SlashingKeeper.SignedBlocksWindow(ctx)-app.SlashingKeeper.MinSignedPerWindow(ctx))+1; height++ {
 		ctx = ctx.WithBlockHeight(height)
-		app.SlashingKeeper.HandleValidatorSignature(ctx, val.Address(), power, false)
+		app.SlashingKeeper.HandleValidatorSignature(ctx, val.Address(), power, false, signedBlocksWindow, minSignedPerWindow)
 	}
 
 	// end block
@@ -164,7 +168,7 @@ func TestHandleAlreadyJailed(t *testing.T) {
 
 	// another block missed
 	ctx = ctx.WithBlockHeight(height)
-	app.SlashingKeeper.HandleValidatorSignature(ctx, val.Address(), power, false)
+	app.SlashingKeeper.HandleValidatorSignature(ctx, val.Address(), power, false, signedBlocksWindow, minSignedPerWindow)
 
 	// validator should not have been slashed twice
 	validator, _ = app.StakingKeeper.GetValidatorByConsAddr(ctx, sdk.GetConsAddress(val))
@@ -198,11 +202,13 @@ func TestValidatorDippingInAndOut(t *testing.T) {
 	tstaking.CreateValidatorWithValPower(valAddr, val, power, true)
 	staking.EndBlocker(ctx, app.StakingKeeper)
 
+	signedBlocksWindow := app.SlashingKeeper.SignedBlocksWindow(ctx)
+	minSignedPerWindow := app.SlashingKeeper.MinSignedPerWindow(ctx)
 	// 100 first blocks OK
 	height := int64(0)
 	for ; height < int64(100); height++ {
 		ctx = ctx.WithBlockHeight(height)
-		app.SlashingKeeper.HandleValidatorSignature(ctx, val.Address(), power, true)
+		app.SlashingKeeper.HandleValidatorSignature(ctx, val.Address(), power, true, signedBlocksWindow, minSignedPerWindow)
 	}
 
 	// kick first validator out of validator set
@@ -224,7 +230,7 @@ func TestValidatorDippingInAndOut(t *testing.T) {
 	newPower := int64(150)
 
 	// validator misses a block
-	app.SlashingKeeper.HandleValidatorSignature(ctx, val.Address(), newPower, false)
+	app.SlashingKeeper.HandleValidatorSignature(ctx, val.Address(), newPower, false, signedBlocksWindow, minSignedPerWindow)
 	height++
 
 	// shouldn't be jailed/kicked yet
@@ -234,7 +240,7 @@ func TestValidatorDippingInAndOut(t *testing.T) {
 	latest := height
 	for ; height < latest+500; height++ {
 		ctx = ctx.WithBlockHeight(height)
-		app.SlashingKeeper.HandleValidatorSignature(ctx, val.Address(), newPower, false)
+		app.SlashingKeeper.HandleValidatorSignature(ctx, val.Address(), newPower, false, signedBlocksWindow, minSignedPerWindow)
 	}
 
 	// should now be jailed & kicked
@@ -258,7 +264,7 @@ func TestValidatorDippingInAndOut(t *testing.T) {
 
 	// validator rejoins and starts signing again
 	app.StakingKeeper.Unjail(ctx, consAddr)
-	app.SlashingKeeper.HandleValidatorSignature(ctx, val.Address(), newPower, true)
+	app.SlashingKeeper.HandleValidatorSignature(ctx, val.Address(), newPower, true, signedBlocksWindow, minSignedPerWindow)
 	height++
 
 	// validator should not be kicked since we reset counter/array when it was jailed
@@ -269,7 +275,7 @@ func TestValidatorDippingInAndOut(t *testing.T) {
 	latest = height
 	for ; height < latest+501; height++ {
 		ctx = ctx.WithBlockHeight(height)
-		app.SlashingKeeper.HandleValidatorSignature(ctx, val.Address(), newPower, false)
+		app.SlashingKeeper.HandleValidatorSignature(ctx, val.Address(), newPower, false, signedBlocksWindow, minSignedPerWindow)
 	}
 
 	// validator should now be jailed & kicked
