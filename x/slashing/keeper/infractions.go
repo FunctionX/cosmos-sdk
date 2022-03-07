@@ -9,7 +9,7 @@ import (
 )
 
 // HandleValidatorSignature handles a validator signature, must be called once per validator per block.
-func (k Keeper) HandleValidatorSignature(ctx sdk.Context, addr cryptotypes.Address, power int64, signed bool) {
+func (k Keeper) HandleValidatorSignature(ctx sdk.Context, addr cryptotypes.Address, power int64, signed bool, signedBlocksWindow int64, minSignedPerWindow int64) {
 	logger := k.Logger(ctx)
 	height := ctx.BlockHeight()
 
@@ -27,7 +27,7 @@ func (k Keeper) HandleValidatorSignature(ctx sdk.Context, addr cryptotypes.Addre
 
 	// this is a relative index, so it counts blocks the validator *should* have signed
 	// will use the 0-value default signing info if not present, except for start height
-	index := signInfo.IndexOffset % k.SignedBlocksWindow(ctx)
+	index := signInfo.IndexOffset % signedBlocksWindow
 	signInfo.IndexOffset++
 
 	// Update signed block bit array & counter
@@ -48,8 +48,6 @@ func (k Keeper) HandleValidatorSignature(ctx sdk.Context, addr cryptotypes.Addre
 		// Array value at this index has not changed, no need to update counter
 	}
 
-	minSignedPerWindow := k.MinSignedPerWindow(ctx)
-
 	if missed {
 		ctx.EventManager().EmitEvent(
 			sdk.NewEvent(
@@ -69,8 +67,8 @@ func (k Keeper) HandleValidatorSignature(ctx sdk.Context, addr cryptotypes.Addre
 		)
 	}
 
-	minHeight := signInfo.StartHeight + k.SignedBlocksWindow(ctx)
-	maxMissed := k.SignedBlocksWindow(ctx) - minSignedPerWindow
+	minHeight := signInfo.StartHeight + signedBlocksWindow
+	maxMissed := signedBlocksWindow - minSignedPerWindow
 
 	// if we are past the minimum height and the validator has missed too many blocks, punish them
 	if height > minHeight && signInfo.MissedBlocksCounter > maxMissed {
@@ -93,7 +91,8 @@ func (k Keeper) HandleValidatorSignature(ctx sdk.Context, addr cryptotypes.Addre
 					sdk.NewAttribute(types.AttributeKeyJailed, consAddr.String()),
 				),
 			)
-			k.sk.Slash(ctx, consAddr, distributionHeight, power, k.SlashFractionDowntime(ctx))
+			slashFractionDowntime := k.SlashFractionDowntime(ctx)
+			k.sk.Slash(ctx, consAddr, distributionHeight, power, slashFractionDowntime)
 			k.sk.Jail(ctx, consAddr)
 
 			signInfo.JailedUntil = ctx.BlockHeader().Time.Add(k.DowntimeJailDuration(ctx))
@@ -109,7 +108,7 @@ func (k Keeper) HandleValidatorSignature(ctx sdk.Context, addr cryptotypes.Addre
 				"validator", consAddr.String(),
 				"min_height", minHeight,
 				"threshold", minSignedPerWindow,
-				"slashed", k.SlashFractionDowntime(ctx).String(),
+				"slashed", slashFractionDowntime.String(),
 				"jailed_until", signInfo.JailedUntil,
 			)
 		} else {
