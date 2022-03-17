@@ -50,3 +50,7 @@ func (keeper Keeper) SetTallyParams(ctx sdk.Context, tallyParams types.TallyPara
 func (keeper Keeper) SetEGFDepositParams(ctx sdk.Context, params types.EGFDepositParams) {
 	keeper.paramSpace.Set(ctx, types.ParamStoreKeyEGFDepositParams, &params)
 }
+
+func (keeper Keeper) hasInitEGFDepositParams(ctx sdk.Context) bool {
+	return keeper.paramSpace.Has(ctx, types.ParamStoreKeyEGFDepositParams)
+}

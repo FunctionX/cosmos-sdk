@@ -200,7 +200,7 @@ func (keeper Keeper) RefundDeposits(ctx sdk.Context, proposalID uint64) {
 
 func (keeper Keeper) SupportEGFTotalDepositProposal(ctx sdk.Context, first bool, claimCoin sdk.Coins) sdk.Coins {
 	// minimum collateral amount for initializing EGF proposals
-	if ctx.BlockHeight() == types.SupportEGFProposalBlock {
+	if ctx.BlockHeight() >= types.SupportEGFProposalBlock && !keeper.hasInitEGFDepositParams(ctx) {
 		keeper.SetEGFDepositParams(ctx, types.EGFDepositParams{
 			InitialDeposit:           sdk.NewCoins(sdk.NewCoin(types.DefaultDepositDenom, sdk.NewInt(types.InitialDeposit).Mul(sdk.NewIntFromBigInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil))))),
 			ClaimRatio:               sdk.MustNewDecFromStr(types.ClaimRatio),
