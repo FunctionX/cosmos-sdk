@@ -3,7 +3,6 @@ package types
 import (
 	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
-	"math/big"
 )
 
 const (
@@ -11,8 +10,8 @@ const (
 	ProposalTypeCommunityPoolSpend = "CommunityPoolSpend"
 	CommunityPoolSpendByRouter     = "distribution"
 	DefaultDepositDenom            = "FX"
-	InitialDeposit                 = 1000
-	EGFDepositProposalThreshold    = 100000
+	InitialDeposit                 = 1000000000000000000000
+	EGFDepositProposalThreshold    = 100000000000000000000000
 	ClaimRatio                     = "0.1"
 )
 
@@ -55,8 +54,8 @@ func GetEGFProposalSupportBlock() int64 {
 
 func DefaultEGFDepositParams() EGFDepositParams {
 	return EGFDepositParams{
-		InitialDeposit:           sdk.NewCoins(sdk.NewCoin(DefaultDepositDenom, sdk.NewInt(InitialDeposit).Mul(sdk.NewIntFromBigInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil))))),
+		InitialDeposit:           sdk.NewCoins(sdk.NewCoin(DefaultDepositDenom, sdk.NewInt(InitialDeposit))),
 		ClaimRatio:               sdk.MustNewDecFromStr(ClaimRatio),
-		DepositProposalThreshold: sdk.NewCoins(sdk.NewCoin(DefaultDepositDenom, sdk.NewInt(EGFDepositProposalThreshold).Mul(sdk.NewIntFromBigInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil))))),
+		DepositProposalThreshold: sdk.NewCoins(sdk.NewCoin(DefaultDepositDenom, sdk.NewInt(EGFDepositProposalThreshold))),
 	}
 }
