@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"math/big"
 )
 
 const (
@@ -50,4 +51,12 @@ func SetEGFProposalSupportBlock(blockHeight int64) {
 
 func GetEGFProposalSupportBlock() int64 {
 	return SupportEGFProposalBlock
+}
+
+func DefaultEGFDepositParams() EGFDepositParams {
+	return EGFDepositParams{
+		InitialDeposit:           sdk.NewCoins(sdk.NewCoin(DefaultDepositDenom, sdk.NewInt(InitialDeposit).Mul(sdk.NewIntFromBigInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil))))),
+		ClaimRatio:               sdk.MustNewDecFromStr(ClaimRatio),
+		DepositProposalThreshold: sdk.NewCoins(sdk.NewCoin(DefaultDepositDenom, sdk.NewInt(EGFDepositProposalThreshold).Mul(sdk.NewIntFromBigInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil))))),
+	}
 }
