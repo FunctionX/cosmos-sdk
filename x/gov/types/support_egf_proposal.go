@@ -3,18 +3,21 @@ package types
 import (
 	"fmt"
 	sdk "github.com/cosmos/cosmos-sdk/types"
+	"math/big"
 )
 
 const (
 	// ProposalTypeCommunityPoolSpend defines the type for a CommunityPoolSpendProposal
 	ProposalTypeCommunityPoolSpend = "CommunityPoolSpend"
+	CommunityPoolSpendByRouter     = "distribution"
 	DefaultDepositDenom            = "FX"
 	InitialDeposit                 = 1000
 	EGFDepositProposalThreshold    = 100000
 	ClaimRatio                     = "0.1"
 )
 
-// var FxDecimals = new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil)
+var decimals = sdk.NewIntFromBigInt(new(big.Int).Exp(big.NewInt(10), big.NewInt(18), nil))
+
 type EGFDepositParams struct {
 	InitialDeposit           sdk.Coins `protobuf:"bytes,1,rep,name=initial_deposit,json=initialDeposit,proto3,castrepeated=github.com/cosmos/cosmos-sdk/types.Coins" json:"initial_deposit,omitempty" yaml:"initial_deposit"`
 	ClaimRatio               sdk.Dec   `protobuf:"bytes,2,opt,name=claim_ratio,json=claimRatio,proto3,customtype=github.com/cosmos/cosmos-sdk/types.Dec" json:"claim_ratio,omitempty" yaml:"claim_ratio"`
@@ -47,13 +50,14 @@ func SetEGFProposalSupportBlock(blockHeight int64) {
 	SupportEGFProposalBlock = blockHeight
 }
 
-func getEGFProposalSupportBlock() int64 {
+func GetEGFProposalSupportBlock() int64 {
 	return SupportEGFProposalBlock
 }
 
-func SupportEGFProposal(ctx sdk.Context, proposalType string) bool {
-	if SupportEGFProposalBlock > 0 && ctx.BlockHeight() >= getEGFProposalSupportBlock() && ProposalTypeCommunityPoolSpend == proposalType {
-		return true
+func DefaultEGFDepositParams() EGFDepositParams {
+	return EGFDepositParams{
+		InitialDeposit:           sdk.NewCoins(sdk.NewCoin(DefaultDepositDenom, sdk.NewInt(InitialDeposit).Mul(decimals))),
+		ClaimRatio:               sdk.MustNewDecFromStr(ClaimRatio),
+		DepositProposalThreshold: sdk.NewCoins(sdk.NewCoin(DefaultDepositDenom, sdk.NewInt(EGFDepositProposalThreshold).Mul(decimals))),
 	}
-	return false
 }
