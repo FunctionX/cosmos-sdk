@@ -137,6 +137,8 @@ func (keeper Keeper) AddDeposit(ctx sdk.Context, proposalID uint64, depositorAdd
 
 	// Check if deposit has provided sufficient total funds to transition the proposal into the voting period
 	activatedVotingPeriod := false
+	// minimum amount to enter the voting period
+	var minDeposit sdk.Coins
 
 	if keeper.SupportEGFProposal(ctx) && (types.CommunityPoolSpendByRouter == proposal.ProposalRoute() &&
 		types.ProposalTypeCommunityPoolSpend == proposal.ProposalType()) {
@@ -144,19 +146,14 @@ func (keeper Keeper) AddDeposit(ctx sdk.Context, proposalID uint64, depositorAdd
 		if !ok {
 			return false, sdkerrors.Wrapf(types.ErrInvalidProposalType, "%d", proposalID)
 		}
-		totDepositProposal := keeper.SupportEGFProposalTotalDeposit(ctx, first, cpsp.Amount)
-		if proposal.Status == types.StatusDepositPeriod && proposal.TotalDeposit.IsAllGTE(totDepositProposal) {
-			keeper.ActivateVotingPeriod(ctx, proposal)
-			activatedVotingPeriod = true
-		}
+		minDeposit = keeper.SupportEGFProposalTotalDeposit(ctx, first, cpsp.Amount)
 	} else {
-		if proposal.Status == types.StatusDepositPeriod && proposal.TotalDeposit.IsAllGTE(keeper.GetDepositParams(ctx).MinDeposit) {
-			keeper.ActivateVotingPeriod(ctx, proposal)
-
-			activatedVotingPeriod = true
-		}
+		minDeposit = keeper.GetDepositParams(ctx).MinDeposit
 	}
-
+	if proposal.Status == types.StatusDepositPeriod && proposal.TotalDeposit.IsAllGTE(minDeposit) {
+		keeper.ActivateVotingPeriod(ctx, proposal)
+		activatedVotingPeriod = true
+	}
 	// Add or update deposit object
 	deposit, found := keeper.GetDeposit(ctx, proposalID, depositorAddr)
 
