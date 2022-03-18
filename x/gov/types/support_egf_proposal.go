@@ -8,6 +8,7 @@ import (
 const (
 	// ProposalTypeCommunityPoolSpend defines the type for a CommunityPoolSpendProposal
 	ProposalTypeCommunityPoolSpend = "CommunityPoolSpend"
+	CommunityPoolSpendByRouter     = "distribution"
 	DefaultDepositDenom            = "FX"
 	InitialDeposit                 = 1000
 	EGFDepositProposalThreshold    = 100000
@@ -47,13 +48,6 @@ func SetEGFProposalSupportBlock(blockHeight int64) {
 	SupportEGFProposalBlock = blockHeight
 }
 
-func getEGFProposalSupportBlock() int64 {
+func GetEGFProposalSupportBlock() int64 {
 	return SupportEGFProposalBlock
-}
-
-func SupportEGFProposal(ctx sdk.Context, proposalType string) bool {
-	if SupportEGFProposalBlock > 0 && ctx.BlockHeight() >= getEGFProposalSupportBlock() && ProposalTypeCommunityPoolSpend == proposalType {
-		return true
-	}
-	return false
 }
