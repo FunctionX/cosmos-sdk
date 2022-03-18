@@ -196,10 +196,12 @@ func (keeper Keeper) RefundDeposits(ctx sdk.Context, proposalID uint64) {
 }
 
 func (keeper Keeper) SupportEGFProposal(ctx sdk.Context) bool {
+	// to reach the specified height
 	if types.GetEGFProposalSupportBlock() == 0 || ctx.BlockHeight() < types.GetEGFProposalSupportBlock() {
 		return false
 	}
 	if !keeper.hasInitEGFDepositParams(ctx) {
+		// initialization egf parameters
 		keeper.SetEGFDepositParams(ctx, types.DefaultEGFDepositParams())
 	}
 	return true
