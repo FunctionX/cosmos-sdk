@@ -1,10 +1,12 @@
 package client
 
 import (
+	"bufio"
 	"encoding/json"
-	"github.com/spf13/viper"
 	"io"
 	"os"
+
+	"github.com/spf13/viper"
 
 	"gopkg.in/yaml.v2"
 
@@ -66,7 +68,10 @@ func (ctx Context) WithKeyringOptions(opts ...keyring.Option) Context {
 
 // WithInput returns a copy of the context with an updated input.
 func (ctx Context) WithInput(r io.Reader) Context {
-	ctx.Input = r
+	// convert to a bufio.Reader to have a shared buffer between the keyring and the
+	// the Commands, ensuring a read from one advance the read pointer for the other.
+	// see https://github.com/cosmos/cosmos-sdk/issues/9566.
+	ctx.Input = bufio.NewReader(r)
 	return ctx
 }
 
@@ -134,7 +139,9 @@ func (ctx Context) WithChainID(chainID string) Context {
 
 // WithHomeDir returns a copy of the Context with HomeDir set.
 func (ctx Context) WithHomeDir(dir string) Context {
-	ctx.HomeDir = dir
+	if dir != "" {
+		ctx.HomeDir = dir
+	}
 	return ctx
 }
 
@@ -334,6 +341,7 @@ func GetFromFields(kr keyring.Keyring, from string, genOnly bool) (sdk.AccAddres
 	return info.GetAddress(), info.GetName(), info.GetType(), nil
 }
 
+// NewKeyringFromBackend gets a Keyring object from a backend
 func NewKeyringFromBackend(ctx Context, backend string) (keyring.Keyring, error) {
 	if ctx.GenerateOnly || ctx.Simulate {
 		return keyring.New(sdk.KeyringServiceName(), keyring.BackendMemory, ctx.KeyringDir, ctx.Input, ctx.KeyringOptions...)
