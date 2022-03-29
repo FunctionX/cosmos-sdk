@@ -2,7 +2,6 @@ package types
 
 import (
 	"context"
-	tmbytes "github.com/tendermint/tendermint/libs/bytes"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
