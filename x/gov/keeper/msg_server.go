@@ -3,6 +3,7 @@ package keeper
 import (
 	"context"
 	"fmt"
+	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
 	"strconv"
 
 	"github.com/armon/go-metrics"
@@ -34,8 +35,9 @@ func (k msgServer) SubmitProposal(goCtx context.Context, msg *types.MsgSubmitPro
 	defer telemetry.IncrCounter(1, types.ModuleName, "proposal")
 
 	if k.SupportEGFProposal(ctx) {
-		if msg.GetInitialDeposit().IsAllLT(k.Keeper.GetEGFDepositParams(ctx).InitialDeposit) {
-			return nil, fmt.Errorf("initial amount too low")
+		paramsInitialDeposit := k.Keeper.GetEGFDepositParams(ctx).InitialDeposit
+		if msg.GetInitialDeposit().IsAllLT(paramsInitialDeposit) {
+			return nil, sdkerrors.Wrapf(types.ErrInitialAmountTooLow, "%s is smaller than %s", msg.GetInitialDeposit().String(), paramsInitialDeposit.String())
 		}
 	}
 
