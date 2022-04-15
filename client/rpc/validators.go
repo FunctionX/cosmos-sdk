@@ -3,10 +3,11 @@ package rpc
 import (
 	"context"
 	"fmt"
-	tmcli "github.com/tendermint/tendermint/libs/cli"
 	"net/http"
 	"strconv"
 	"strings"
+
+	tmcli "github.com/tendermint/tendermint/libs/cli"
 
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"

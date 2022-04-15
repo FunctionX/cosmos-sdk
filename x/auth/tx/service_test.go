@@ -3,14 +3,15 @@ package tx_test
 import (
 	"context"
 	"fmt"
+	"strings"
+	"testing"
+
 	"github.com/cosmos/cosmos-sdk/crypto/hd"
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	kmultisig "github.com/cosmos/cosmos-sdk/crypto/keys/multisig"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
 	"github.com/cosmos/cosmos-sdk/testutil"
 	authtest "github.com/cosmos/cosmos-sdk/x/auth/client/testutil"
-	"strings"
-	"testing"
 
 	"github.com/stretchr/testify/suite"
 

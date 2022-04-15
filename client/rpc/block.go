@@ -8,11 +8,12 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 
+	tmcli "github.com/tendermint/tendermint/libs/cli"
+
 	"github.com/cosmos/cosmos-sdk/client"
 	"github.com/cosmos/cosmos-sdk/client/flags"
 	"github.com/cosmos/cosmos-sdk/codec/legacy"
 	"github.com/cosmos/cosmos-sdk/types/rest"
-	tmcli "github.com/tendermint/tendermint/libs/cli"
 )
 
 // BlockCommand returns the verified block data for a given heights
