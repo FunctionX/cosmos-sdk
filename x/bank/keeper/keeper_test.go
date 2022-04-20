@@ -1024,6 +1024,19 @@ func (suite *IntegrationTestSuite) TestSetDenomMetaData() {
 	suite.Require().Equal(metadata[1].GetDenomUnits()[1].GetAliases(), actualMetadata.GetDenomUnits()[1].GetAliases())
 }
 
+func (suite *IntegrationTestSuite) TestDeleteDenomMetaData() {
+	app, ctx := suite.app, suite.ctx
+
+	metadata := suite.getTestMetadata()
+
+	for i := range []int{1, 2} {
+		app.BankKeeper.SetDenomMetaData(ctx, metadata[i])
+		app.BankKeeper.DeleteDenomMetaData(ctx, metadata[i].Base)
+		actualMetadata := app.BankKeeper.GetDenomMetaData(ctx, metadata[i].Base)
+		suite.Require().Equal(types.Metadata{}, actualMetadata)
+	}
+}
+
 func (suite *IntegrationTestSuite) TestIterateAllDenomMetaData() {
 	app, ctx := suite.app, suite.ctx
 

@@ -37,9 +37,9 @@ func (m Metadata) Validate() error {
 			if denomUnit.Denom != m.Base {
 				return fmt.Errorf("metadata's first denomination unit must be the one with base denom '%s'", m.Base)
 			}
-			if denomUnit.Exponent != 0 {
-				return fmt.Errorf("the exponent for base denomination unit %s must be 0", m.Base)
-			}
+			//if denomUnit.Exponent != 0 {
+			//	return fmt.Errorf("the exponent for base denomination unit %s must be 0", m.Base)
+			//}
 		} else if currentExponent >= denomUnit.Exponent {
 			return errors.New("denom units should be sorted asc by exponent")
 		}

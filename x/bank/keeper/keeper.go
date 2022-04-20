@@ -29,6 +29,7 @@ type Keeper interface {
 
 	GetDenomMetaData(ctx sdk.Context, denom string) types.Metadata
 	SetDenomMetaData(ctx sdk.Context, denomMetaData types.Metadata)
+	DeleteDenomMetaData(ctx sdk.Context, baseDenom string)
 	IterateAllDenomMetaData(ctx sdk.Context, cb func(types.Metadata) bool)
 
 	SendCoinsFromModuleToAccount(ctx sdk.Context, senderModule string, recipientAddr sdk.AccAddress, amt sdk.Coins) error
@@ -233,6 +234,13 @@ func (k BaseKeeper) SetDenomMetaData(ctx sdk.Context, denomMetaData types.Metada
 
 	m := k.cdc.MustMarshal(&denomMetaData)
 	denomMetaDataStore.Set([]byte(denomMetaData.Base), m)
+}
+
+// DeleteDenomMetaData delete the denominations metadata
+func (k BaseKeeper) DeleteDenomMetaData(ctx sdk.Context, baseDenom string) {
+	store := ctx.KVStore(k.storeKey)
+	denomMetaDataStore := prefix.NewStore(store, types.DenomMetadataKey(baseDenom))
+	denomMetaDataStore.Delete([]byte(baseDenom))
 }
 
 // SendCoinsFromModuleToAccount transfers coins from a ModuleAccount to an AccAddress.

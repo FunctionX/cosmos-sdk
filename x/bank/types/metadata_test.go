@@ -119,7 +119,7 @@ func TestMetadataValidate(t *testing.T) {
 				Base:    "uatom",
 				Display: "atom",
 			},
-			true,
+			false,
 		},
 		{
 			"no display denom unit",
