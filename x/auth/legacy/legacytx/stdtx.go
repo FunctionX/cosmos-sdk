@@ -1,10 +1,6 @@
 package legacytx
 
 import (
-	"fmt"
-
-	"gopkg.in/yaml.v2"
-
 	"github.com/cosmos/cosmos-sdk/codec/legacy"
 	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
 	cryptotypes "github.com/cosmos/cosmos-sdk/crypto/types"
@@ -88,35 +84,6 @@ func (ss StdSignature) GetSignature() []byte {
 // Amino codec.
 func (ss StdSignature) GetPubKey() cryptotypes.PubKey {
 	return ss.PubKey
-}
-
-// MarshalYAML returns the YAML representation of the signature.
-func (ss StdSignature) MarshalYAML() (interface{}, error) {
-	var (
-		bz     []byte
-		pubkey string
-		err    error
-	)
-
-	if ss.PubKey != nil {
-		pubkey, err = sdk.Bech32ifyPubKey(sdk.Bech32PubKeyTypeAccPub, ss.GetPubKey())
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	bz, err = yaml.Marshal(struct {
-		PubKey    string
-		Signature string
-	}{
-		PubKey:    pubkey,
-		Signature: fmt.Sprintf("%X", ss.Signature),
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return string(bz), err
 }
 
 func (ss StdSignature) UnpackInterfaces(unpacker codectypes.AnyUnpacker) error {

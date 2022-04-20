@@ -1,12 +1,8 @@
-//go:build norace
-// +build norace
-
-package cli_test
+package testutil
 
 import (
 	"fmt"
 	"strings"
-	"testing"
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/stretchr/testify/suite"
@@ -26,16 +22,16 @@ type IntegrationTestSuite struct {
 	network *network.Network
 }
 
+func NewIntegrationTestSuite(cfg network.Config) *IntegrationTestSuite {
+	return &IntegrationTestSuite{cfg: cfg}
+}
+
 // SetupSuite executes bootstrapping logic before all the tests, i.e. once before
 // the entire suite, start executing.
 func (s *IntegrationTestSuite) SetupSuite() {
 	s.T().Log("setting up integration test suite")
 
-	cfg := network.DefaultConfig()
-	cfg.NumValidators = 1
-
-	s.cfg = cfg
-	s.network = network.New(s.T(), cfg)
+	s.network = network.New(s.T(), s.cfg)
 
 	_, err := s.network.WaitForHeight(1)
 	s.Require().NoError(err)
@@ -50,9 +46,9 @@ func (s *IntegrationTestSuite) TearDownSuite() {
 
 func (s *IntegrationTestSuite) TestGetCmdQuerySigningInfo() {
 	val := s.network.Validators[0]
-
-	valConsPubKey, err := sdk.Bech32ifyPubKey(sdk.Bech32PubKeyTypeConsPub, val.PubKey)
+	pubKeyBz, err := s.cfg.Codec.MarshalInterfaceJSON(val.PubKey)
 	s.Require().NoError(err)
+	pubKeyStr := string(pubKeyBz)
 
 	testCases := []struct {
 		name           string
@@ -64,7 +60,7 @@ func (s *IntegrationTestSuite) TestGetCmdQuerySigningInfo() {
 		{
 			"valid address (json output)",
 			[]string{
-				valConsPubKey,
+				pubKeyStr,
 				fmt.Sprintf("--%s=json", tmcli.OutputFlag),
 				fmt.Sprintf("--%s=1", flags.FlagHeight),
 			},
@@ -74,7 +70,7 @@ func (s *IntegrationTestSuite) TestGetCmdQuerySigningInfo() {
 		{
 			"valid address (text output)",
 			[]string{
-				valConsPubKey,
+				pubKeyStr,
 				fmt.Sprintf("--%s=text", tmcli.OutputFlag),
 				fmt.Sprintf("--%s=1", flags.FlagHeight),
 			},
@@ -146,13 +142,12 @@ slash_fraction_downtime: "0.010000000000000000"`,
 
 func (s *IntegrationTestSuite) TestNewUnjailTxCmd() {
 	val := s.network.Validators[0]
-
 	testCases := []struct {
 		name         string
 		args         []string
 		expectErr    bool
-		respType     proto.Message
 		expectedCode uint32
+		respType     proto.Message
 	}{
 		{
 			"valid transaction",
@@ -162,7 +157,7 @@ func (s *IntegrationTestSuite) TestNewUnjailTxCmd() {
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastSync), // sync mode as there are no funds yet
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10))).String()),
 			},
-			false, &sdk.TxResponse{}, 0,
+			false, 0, &sdk.TxResponse{},
 		},
 	}
 
@@ -178,15 +173,11 @@ func (s *IntegrationTestSuite) TestNewUnjailTxCmd() {
 				s.Require().Error(err)
 			} else {
 				s.Require().NoError(err)
-				s.Require().NoError(clientCtx.JSONCodec.UnmarshalJSON(out.Bytes(), tc.respType), out.String())
+				s.Require().NoError(clientCtx.Codec.UnmarshalJSON(out.Bytes(), tc.respType), out.String())
 
 				txResp := tc.respType.(*sdk.TxResponse)
 				s.Require().Equal(tc.expectedCode, txResp.Code, out.String())
 			}
 		})
 	}
-}
-
-func TestIntegrationTestSuite(t *testing.T) {
-	suite.Run(t, new(IntegrationTestSuite))
 }

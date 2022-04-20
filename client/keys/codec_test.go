@@ -20,17 +20,17 @@ func getTestCases() testCases {
 	return testCases{
 		// nolint:govet
 		[]keyring.KeyOutput{
-			{"A", "B", "C", "D", "E", 0, nil},
-			{"A", "B", "C", "D", "", 0, nil},
-			{"", "B", "C", "D", "", 0, nil},
-			{"", "", "", "", "", 0, nil},
+			{"A", "B", "C", "D", "E", "F"},
+			{"A", "B", "C", "D", "", "F"},
+			{"", "B", "C", "D", "", "F"},
+			{"", "", "", "", "", ""},
 		},
 		make([]keyring.KeyOutput, 4),
 		[][]byte{
-			[]byte(`{"name":"A","type":"B","address":"C","pubkey":"D","mnemonic":"E"}`),
-			[]byte(`{"name":"A","type":"B","address":"C","pubkey":"D"}`),
-			[]byte(`{"name":"","type":"B","address":"C","pubkey":"D"}`),
-			[]byte(`{"name":"","type":"","address":"","pubkey":""}`),
+			[]byte(`{"name":"A","type":"B","address":"C","pubkey":"D","mnemonic":"E","algo":"F"}`),
+			[]byte(`{"name":"A","type":"B","address":"C","pubkey":"D","algo":"F"}`),
+			[]byte(`{"name":"","type":"B","address":"C","pubkey":"D","algo":"F"}`),
+			[]byte(`{"name":"","type":"","address":"","pubkey":"","algo":""}`),
 		},
 	}
 }

@@ -117,10 +117,16 @@ func runShowCmd(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	switch {
-	case isShowAddr:
-		printKeyAddress(cmd.OutOrStdout(), info, bechKeyOut)
-	case isShowPubKey:
-		printPubKey(cmd.OutOrStdout(), info, bechKeyOut)
+	case isShowAddr, isShowPubKey:
+		ko, err := bechKeyOut(info)
+		if err != nil {
+			return err
+		}
+		out := ko.Address
+		if isShowPubKey {
+			out = ko.PubKey
+		}
+		fmt.Fprintln(cmd.OutOrStdout(), out)
 	default:
 		printKeyInfo(cmd.OutOrStdout(), info, bechKeyOut, clientCtx.OutputFormat)
 	}
@@ -180,11 +186,11 @@ func validateMultisigThreshold(k, nKeys int) error {
 func getBechKeyOut(bechPrefix string) (bechKeyOutFn, error) {
 	switch bechPrefix {
 	case sdk.PrefixAccount:
-		return keyring.Bech32KeyOutput, nil
+		return keyring.MkAccKeyOutput, nil
 	case sdk.PrefixValidator:
-		return keyring.Bech32ValKeyOutput, nil
+		return keyring.MkValKeyOutput, nil
 	case sdk.PrefixConsensus:
-		return keyring.Bech32ConsKeyOutput, nil
+		return keyring.MkConsKeyOutput, nil
 	}
 
 	return nil, fmt.Errorf("invalid Bech32 prefix encoding provided: %s", bechPrefix)

@@ -10,7 +10,7 @@ import (
 	txtypes "github.com/cosmos/cosmos-sdk/types/tx"
 )
 
-// DefaultTxEncoder returns a default protobuf TxEncoder using the provided Codec
+// DefaultTxEncoder returns a default protobuf TxEncoder using the provided Marshaler
 func DefaultTxEncoder() sdk.TxEncoder {
 	return func(tx sdk.Tx) ([]byte, error) {
 		txWrapper, ok := tx.(*wrapper)
@@ -28,7 +28,7 @@ func DefaultTxEncoder() sdk.TxEncoder {
 	}
 }
 
-// DefaultJSONTxEncoder returns a default protobuf JSON TxEncoder using the provided Codec.
+// DefaultJSONTxEncoder returns a default protobuf JSON TxEncoder using the provided Marshaler.
 func DefaultJSONTxEncoder(cdc codec.ProtoCodecMarshaler) sdk.TxEncoder {
 	return func(tx sdk.Tx) ([]byte, error) {
 		txWrapper, ok := tx.(*wrapper)

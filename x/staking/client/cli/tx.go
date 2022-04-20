@@ -58,9 +58,10 @@ func NewCreateValidatorCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			txf := tx.NewFactoryCLI(clientCtx, cmd.Flags()).WithTxConfig(clientCtx.TxConfig).WithAccountRetriever(clientCtx.AccountRetriever)
 
-			txf, msg, err := NewBuildCreateValidatorMsg(clientCtx, txf, cmd.Flags())
+			txf := tx.NewFactoryCLI(clientCtx, cmd.Flags()).
+				WithTxConfig(clientCtx.TxConfig).WithAccountRetriever(clientCtx.AccountRetriever)
+			txf, msg, err := newBuildCreateValidatorMsg(clientCtx, txf, cmd.Flags())
 			if err != nil {
 				return err
 			}
@@ -276,7 +277,7 @@ $ %s tx staking unbond %s1gghjut3ccd8ay0zduzj64hwre2fxs9ldmqhffj 100stake --from
 	return cmd
 }
 
-func NewBuildCreateValidatorMsg(clientCtx client.Context, txf tx.Factory, fs *flag.FlagSet) (tx.Factory, sdk.Msg, error) {
+func newBuildCreateValidatorMsg(clientCtx client.Context, txf tx.Factory, fs *flag.FlagSet) (tx.Factory, *types.MsgCreateValidator, error) {
 	fAmount, _ := fs.GetString(FlagAmount)
 	amount, err := sdk.ParseCoinNormalized(fAmount)
 	if err != nil {
@@ -289,8 +290,8 @@ func NewBuildCreateValidatorMsg(clientCtx client.Context, txf tx.Factory, fs *fl
 		return txf, nil, err
 	}
 
-	pk, err := sdk.GetPubKeyFromBech32(sdk.Bech32PubKeyTypeConsPub, pkStr)
-	if err != nil {
+	var pk cryptotypes.PubKey
+	if err := clientCtx.Codec.UnmarshalInterfaceJSON([]byte(pkStr), &pk); err != nil {
 		return txf, nil, err
 	}
 
@@ -389,7 +390,7 @@ type TxCreateValidatorConfig struct {
 	CommissionMaxChangeRate string
 	MinSelfDelegation       string
 
-	PubKey string
+	PubKey cryptotypes.PubKey
 
 	IP              string
 	Website         string
@@ -461,7 +462,7 @@ func PrepareConfigForTxCreateValidator(flagSet *flag.FlagSet, moniker, nodeID, c
 	}
 
 	c.NodeID = nodeID
-	c.PubKey = sdk.MustBech32ifyPubKey(sdk.Bech32PubKeyTypeConsPub, valPubKey)
+	c.PubKey = valPubKey
 	c.Website = website
 	c.SecurityContact = securityContact
 	c.Details = details
@@ -502,13 +503,6 @@ func BuildCreateValidatorMsg(clientCtx client.Context, config TxCreateValidatorC
 	}
 
 	valAddr := clientCtx.GetFromAddress()
-	pkStr := config.PubKey
-
-	pk, err := sdk.GetPubKeyFromBech32(sdk.Bech32PubKeyTypeConsPub, pkStr)
-	if err != nil {
-		return txBldr, nil, err
-	}
-
 	description := types.NewDescription(
 		config.Moniker,
 		config.Identity,
@@ -536,7 +530,7 @@ func BuildCreateValidatorMsg(clientCtx client.Context, config TxCreateValidatorC
 	}
 
 	msg, err := types.NewMsgCreateValidator(
-		sdk.ValAddress(valAddr), pk, amount, description, commissionRates, minSelfDelegation,
+		sdk.ValAddress(valAddr), config.PubKey, amount, description, commissionRates, minSelfDelegation,
 	)
 	if err != nil {
 		return txBldr, msg, err

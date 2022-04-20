@@ -19,6 +19,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/crypto/keyring"
 	"github.com/cosmos/cosmos-sdk/simapp"
 	"github.com/cosmos/cosmos-sdk/testutil"
+	"github.com/cosmos/cosmos-sdk/testutil/testdata"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
@@ -121,6 +122,8 @@ func Test_runAddCmdBasic(t *testing.T) {
 }
 
 func Test_runAddCmdDryRun(t *testing.T) {
+	pubkey1 := `{"@type":"/cosmos.crypto.secp256k1.PubKey","key":"AtObiFVE4s+9+RX5SP8TN9r2mxpoaT4eGj9CJfK7VRzN"}`
+	pubkey2 := `{"@type":"/cosmos.crypto.secp256k1.PubKey","key":"A/se1vkqgdQ7VJQCM4mxN+L+ciGhnnJ4XYsQCRBMrdRi"}`
 
 	testData := []struct {
 		name  string
@@ -161,6 +164,24 @@ func Test_runAddCmdDryRun(t *testing.T) {
 			},
 			added: false,
 		},
+		{
+			name: "pubkey account is added",
+			args: []string{
+				"testkey",
+				fmt.Sprintf("--%s=%s", flags.FlagDryRun, "false"),
+				fmt.Sprintf("--%s=%s", FlagPublicKey, pubkey1),
+			},
+			added: true,
+		},
+		{
+			name: "pubkey account is not added with dry run",
+			args: []string{
+				"testkey",
+				fmt.Sprintf("--%s=%s", flags.FlagDryRun, "true"),
+				fmt.Sprintf("--%s=%s", FlagPublicKey, pubkey2),
+			},
+			added: false,
+		},
 	}
 	for _, tt := range testData {
 		tt := tt
@@ -181,7 +202,7 @@ func Test_runAddCmdDryRun(t *testing.T) {
 			ctx := context.WithValue(context.Background(), client.ClientContextKey, &clientCtx)
 
 			path := sdk.GetConfig().GetFullBIP44Path()
-			_, err = kb.NewAccount("subkey", testutil.TestMnemonic, "", path, hd.Secp256k1)
+			_, err = kb.NewAccount("subkey", testdata.TestMnemonic, "", path, hd.Secp256k1)
 			require.NoError(t, err)
 
 			t.Cleanup(func() {

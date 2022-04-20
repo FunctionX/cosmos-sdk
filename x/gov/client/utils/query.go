@@ -6,7 +6,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/client"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	sdkerrors "github.com/cosmos/cosmos-sdk/types/errors"
-	authclient "github.com/cosmos/cosmos-sdk/x/auth/client"
+	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	"github.com/cosmos/cosmos-sdk/x/gov/types"
 )
 
@@ -57,7 +57,7 @@ func QueryDepositsByTxQuery(clientCtx client.Context, params types.QueryProposal
 
 	// NOTE: SearchTxs is used to facilitate the txs query which does not currently
 	// support configurable pagination.
-	searchResult, err := authclient.QueryTxsByEvents(clientCtx, events, defaultPage, defaultLimit, "")
+	searchResult, err := authtx.QueryTxsByEvents(clientCtx, events, defaultPage, defaultLimit, "")
 	if err != nil {
 		return nil, err
 	}
@@ -97,13 +97,14 @@ func QueryVotesByTxQuery(clientCtx client.Context, params types.QueryProposalVot
 		nextTxPage = defaultPage
 		totalLimit = params.Limit * params.Page
 	)
+
 	// query interrupted either if we collected enough votes or tx indexer run out of relevant txs
 	for len(votes) < totalLimit {
-		searchResult, err := authclient.QueryTxsByEvents(clientCtx, events, nextTxPage, defaultLimit, "")
+		searchResult, err := authtx.QueryTxsByEvents(clientCtx, events, nextTxPage, defaultLimit, "")
 		if err != nil {
 			return nil, err
 		}
-		nextTxPage++
+
 		for _, info := range searchResult.Txs {
 			for _, msg := range info.GetTx().GetMsgs() {
 				if msg.Type() == types.TypeMsgVote {
@@ -120,6 +121,8 @@ func QueryVotesByTxQuery(clientCtx client.Context, params types.QueryProposalVot
 		if len(searchResult.Txs) != defaultLimit {
 			break
 		}
+
+		nextTxPage++
 	}
 	start, end := client.Paginate(len(votes), params.Page, params.Limit, 100)
 	if start < 0 || end < 0 {
@@ -146,7 +149,7 @@ func QueryVoteByTxQuery(clientCtx client.Context, params types.QueryVoteParams) 
 
 	// NOTE: SearchTxs is used to facilitate the txs query which does not currently
 	// support configurable pagination.
-	searchResult, err := authclient.QueryTxsByEvents(clientCtx, events, defaultPage, defaultLimit, "")
+	searchResult, err := authtx.QueryTxsByEvents(clientCtx, events, defaultPage, defaultLimit, "")
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +165,7 @@ func QueryVoteByTxQuery(clientCtx client.Context, params types.QueryVoteParams) 
 					Option:     voteMsg.Option,
 				}
 
-				bz, err := clientCtx.JSONCodec.MarshalJSON(&vote)
+				bz, err := clientCtx.Codec.MarshalJSON(&vote)
 				if err != nil {
 					return nil, err
 				}
@@ -178,6 +181,7 @@ func QueryVoteByTxQuery(clientCtx client.Context, params types.QueryVoteParams) 
 // QueryDepositByTxQuery will query for a single deposit via a direct txs tags
 // query.
 func QueryDepositByTxQuery(clientCtx client.Context, params types.QueryDepositParams) ([]byte, error) {
+
 	// initial deposit was submitted with proposal, so must be queried separately
 	initialDeposit, err := queryInitialDepositByTxQuery(clientCtx, params.ProposalID)
 	if err != nil {
@@ -201,7 +205,7 @@ func QueryDepositByTxQuery(clientCtx client.Context, params types.QueryDepositPa
 
 	// NOTE: SearchTxs is used to facilitate the txs query which does not currently
 	// support configurable pagination.
-	searchResult, err := authclient.QueryTxsByEvents(clientCtx, events, defaultPage, defaultLimit, "")
+	searchResult, err := authtx.QueryTxsByEvents(clientCtx, events, defaultPage, defaultLimit, "")
 	if err != nil {
 		return nil, err
 	}
@@ -218,7 +222,7 @@ func QueryDepositByTxQuery(clientCtx client.Context, params types.QueryDepositPa
 					Amount:     depMsg.Amount,
 				}
 
-				bz, err := clientCtx.JSONCodec.MarshalJSON(&deposit)
+				bz, err := clientCtx.Codec.MarshalJSON(&deposit)
 				if err != nil {
 					return nil, err
 				}
@@ -241,7 +245,7 @@ func QueryProposerByTxQuery(clientCtx client.Context, proposalID uint64) (Propos
 
 	// NOTE: SearchTxs is used to facilitate the txs query which does not currently
 	// support configurable pagination.
-	searchResult, err := authclient.QueryTxsByEvents(clientCtx, events, defaultPage, defaultLimit, "")
+	searchResult, err := authtx.QueryTxsByEvents(clientCtx, events, defaultPage, defaultLimit, "")
 	if err != nil {
 		return Proposer{}, err
 	}
@@ -283,7 +287,7 @@ func queryInitialDepositByTxQuery(clientCtx client.Context, proposalID uint64) (
 		fmt.Sprintf("%s.%s='%s'", sdk.EventTypeMessage, sdk.AttributeKeyAction, types.TypeMsgSubmitProposal),
 		fmt.Sprintf("%s.%s='%s'", types.EventTypeSubmitProposal, types.AttributeKeyProposalID, []byte(fmt.Sprintf("%d", proposalID))),
 	}
-	searchResult, err := authclient.QueryTxsByEvents(clientCtx, events, defaultPage, defaultLimit, "")
+	searchResult, err := authtx.QueryTxsByEvents(clientCtx, events, defaultPage, defaultLimit, "")
 
 	if err != nil {
 		return types.Deposit{}, err
@@ -302,5 +306,5 @@ func queryInitialDepositByTxQuery(clientCtx client.Context, proposalID uint64) (
 		}
 	}
 
-	return types.Deposit{}, sdkerrors.Wrapf(sdkerrors.ErrKeyNotFound, "failed to find the initial deposit for proposalID %d", proposalID)
+	return types.Deposit{}, sdkerrors.ErrNotFound.Wrapf("failed to find the initial deposit for proposalID %d", proposalID)
 }

@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	tmcli "github.com/tendermint/tendermint/libs/cli"
 	tmtypes "github.com/tendermint/tendermint/types"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -15,7 +14,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/query"
 	"github.com/cosmos/cosmos-sdk/types/rest"
 	"github.com/cosmos/cosmos-sdk/version"
-	authclient "github.com/cosmos/cosmos-sdk/x/auth/client"
+	authtx "github.com/cosmos/cosmos-sdk/x/auth/tx"
 	"github.com/cosmos/cosmos-sdk/x/auth/types"
 )
 
@@ -197,7 +196,7 @@ $ %s query txs --%s 'message.sender=cosmos1...&message.action=withdraw_delegator
 			page, _ := cmd.Flags().GetInt(flags.FlagPage)
 			limit, _ := cmd.Flags().GetInt(flags.FlagLimit)
 
-			txs, err := authclient.QueryTxsByEvents(clientCtx, tmEvents, page, limit, "")
+			txs, err := authtx.QueryTxsByEvents(clientCtx, tmEvents, page, limit, "")
 			if err != nil {
 				return err
 			}
@@ -206,11 +205,10 @@ $ %s query txs --%s 'message.sender=cosmos1...&message.action=withdraw_delegator
 		},
 	}
 
-	cmd.Flags().String(flags.FlagNode, "tcp://localhost:26657", "<host>:<port> to Tendermint RPC interface for this chain")
+	flags.AddQueryFlagsToCmd(cmd)
 	cmd.Flags().Int(flags.FlagPage, rest.DefaultPage, "Query a specific page of paginated results")
 	cmd.Flags().Int(flags.FlagLimit, rest.DefaultLimit, "Query number of transactions results per page returned")
 	cmd.Flags().String(flagEvents, "", fmt.Sprintf("list of transaction events in the form of %s", eventFormat))
-	cmd.Flags().StringP(tmcli.OutputFlag, "o", "text", "Output format (text|json)")
 	cmd.MarkFlagRequired(flagEvents)
 
 	return cmd
@@ -247,7 +245,7 @@ $ %s query tx --%s=%s <sig1_base64>,<sig2_base64...>
 					}
 
 					// If hash is given, then query the tx by hash.
-					output, err := authclient.QueryTx(clientCtx, args[0])
+					output, err := authtx.QueryTx(clientCtx, args[0])
 					if err != nil {
 						return err
 					}
@@ -269,7 +267,7 @@ $ %s query tx --%s=%s <sig1_base64>,<sig2_base64...>
 						tmEvents[i] = fmt.Sprintf("%s.%s='%s'", sdk.EventTypeTx, sdk.AttributeKeySignature, sig)
 					}
 
-					txs, err := authclient.QueryTxsByEvents(clientCtx, tmEvents, rest.DefaultPage, query.DefaultLimit, "")
+					txs, err := authtx.QueryTxsByEvents(clientCtx, tmEvents, rest.DefaultPage, query.DefaultLimit, "")
 					if err != nil {
 						return err
 					}
@@ -278,7 +276,7 @@ $ %s query tx --%s=%s <sig1_base64>,<sig2_base64...>
 					}
 					if len(txs.Txs) > 1 {
 						// This case means there's a bug somewhere else in the code. Should not happen.
-						return errors.Wrapf(errors.ErrLogic, "found %d txs matching given signatures", len(txs.Txs))
+						return errors.ErrLogic.Wrapf("found %d txs matching given signatures", len(txs.Txs))
 					}
 
 					return clientCtx.PrintProto(txs.Txs[0])
@@ -292,7 +290,7 @@ $ %s query tx --%s=%s <sig1_base64>,<sig2_base64...>
 					tmEvents := []string{
 						fmt.Sprintf("%s.%s='%s'", sdk.EventTypeTx, sdk.AttributeKeyAccountSequence, args[0]),
 					}
-					txs, err := authclient.QueryTxsByEvents(clientCtx, tmEvents, rest.DefaultPage, query.DefaultLimit, "")
+					txs, err := authtx.QueryTxsByEvents(clientCtx, tmEvents, rest.DefaultPage, query.DefaultLimit, "")
 					if err != nil {
 						return err
 					}

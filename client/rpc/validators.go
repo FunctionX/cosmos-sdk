@@ -68,7 +68,7 @@ func ValidatorCommand() *cobra.Command {
 	return cmd
 }
 
-// Validator output in bech32 format
+// Validator output
 type ValidatorOutput struct {
 	Address          sdk.ConsAddress    `json:"address"`
 	PubKey           cryptotypes.PubKey `json:"pub_key"`

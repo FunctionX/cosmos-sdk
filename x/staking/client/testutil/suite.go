@@ -1,7 +1,4 @@
-//go:build norace
-// +build norace
-
-package cli_test
+package testutil
 
 import (
 	"context"
@@ -25,7 +22,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/query"
 	banktestutil "github.com/cosmos/cosmos-sdk/x/bank/client/testutil"
 	"github.com/cosmos/cosmos-sdk/x/staking/client/cli"
-	stakingtestutil "github.com/cosmos/cosmos-sdk/x/staking/client/testutil"
 	"github.com/cosmos/cosmos-sdk/x/staking/types"
 )
 
@@ -36,6 +32,10 @@ type IntegrationTestSuite struct {
 	network *network.Network
 }
 
+func NewIntegrationTestSuite(cfg network.Config) *IntegrationTestSuite {
+	return &IntegrationTestSuite{cfg: cfg}
+}
+
 func (s *IntegrationTestSuite) SetupSuite() {
 	s.T().Log("setting up integration test suite")
 
@@ -43,11 +43,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 		s.T().Skip("skipping test in unit-tests mode.")
 	}
 
-	cfg := network.DefaultConfig()
-	cfg.NumValidators = 2
-
-	s.cfg = cfg
-	s.network = network.New(s.T(), cfg)
+	s.network = network.New(s.T(), s.cfg)
 
 	_, err := s.network.WaitForHeight(1)
 	s.Require().NoError(err)
@@ -59,13 +55,19 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	val2 := s.network.Validators[1]
 
 	// redelegate
-	_, err = stakingtestutil.MsgRedelegateExec(val.ClientCtx, val.Address, val.ValAddress, val2.ValAddress, unbond)
+	_, err = MsgRedelegateExec(
+		val.ClientCtx,
+		val.Address,
+		val.ValAddress,
+		val2.ValAddress,
+		unbond,
+		fmt.Sprintf("--%s=%d", flags.FlagGas, 300000),
+	)
 	s.Require().NoError(err)
 	_, err = s.network.WaitForHeight(1)
 	s.Require().NoError(err)
-
 	// unbonding
-	_, err = stakingtestutil.MsgUnbondExec(val.ClientCtx, val.Address, val.ValAddress, unbond)
+	_, err = MsgUnbondExec(val.ClientCtx, val.Address, val.ValAddress, unbond)
 	s.Require().NoError(err)
 	_, err = s.network.WaitForHeight(1)
 	s.Require().NoError(err)
@@ -77,17 +79,18 @@ func (s *IntegrationTestSuite) TearDownSuite() {
 }
 
 func (s *IntegrationTestSuite) TestNewCreateValidatorCmd() {
+	require := s.Require()
 	val := s.network.Validators[0]
 
 	consPrivKey := ed25519.GenPrivKey()
-	consPubKey, err := sdk.Bech32ifyPubKey(sdk.Bech32PubKeyTypeConsPub, consPrivKey.PubKey())
-	s.Require().NoError(err)
+	consPubKeyBz, err := s.cfg.Codec.MarshalInterfaceJSON(consPrivKey.PubKey())
+	require.NoError(err)
+	require.NotNil(consPubKeyBz)
 
 	info, _, err := val.ClientCtx.Keyring.NewMnemonic("NewValidator", keyring.English, sdk.FullFundraiserPath, keyring.DefaultBIP39Passphrase, hd.Secp256k1)
-	s.Require().NoError(err)
+	require.NoError(err)
 
 	newAddr := sdk.AccAddress(info.GetPubKey().Address())
-
 	_, err = banktestutil.MsgSendExec(
 		val.ClientCtx,
 		val.Address,
@@ -96,14 +99,14 @@ func (s *IntegrationTestSuite) TestNewCreateValidatorCmd() {
 		fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
 		fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10))).String()),
 	)
-	s.Require().NoError(err)
+	require.NoError(err)
 
 	testCases := []struct {
 		name         string
 		args         []string
 		expectErr    bool
-		respType     proto.Message
 		expectedCode uint32
+		respType     proto.Message
 	}{
 		{
 			"invalid transaction (missing amount)",
@@ -121,12 +124,12 @@ func (s *IntegrationTestSuite) TestNewCreateValidatorCmd() {
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10))).String()),
 			},
-			true, nil, 0,
+			true, 0, nil,
 		},
 		{
 			"invalid transaction (missing pubkey)",
 			[]string{
-				fmt.Sprintf("--%s=100stake", cli.FlagAmount),
+				fmt.Sprintf("--%s=%dstake", cli.FlagAmount, 100),
 				fmt.Sprintf("--%s=AFAF00C4", cli.FlagIdentity),
 				fmt.Sprintf("--%s=https://newvalidator.io", cli.FlagWebsite),
 				fmt.Sprintf("--%s=contact@newvalidator.io", cli.FlagSecurityContact),
@@ -140,13 +143,13 @@ func (s *IntegrationTestSuite) TestNewCreateValidatorCmd() {
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10))).String()),
 			},
-			true, nil, 0,
+			true, 0, nil,
 		},
 		{
 			"invalid transaction (missing moniker)",
 			[]string{
-				fmt.Sprintf("--%s=%s", cli.FlagPubKey, consPubKey),
-				fmt.Sprintf("--%s=100stake", cli.FlagAmount),
+				fmt.Sprintf("--%s=%s", cli.FlagPubKey, consPubKeyBz),
+				fmt.Sprintf("--%s=%dstake", cli.FlagAmount, 100),
 				fmt.Sprintf("--%s=AFAF00C4", cli.FlagIdentity),
 				fmt.Sprintf("--%s=https://newvalidator.io", cli.FlagWebsite),
 				fmt.Sprintf("--%s=contact@newvalidator.io", cli.FlagSecurityContact),
@@ -160,13 +163,13 @@ func (s *IntegrationTestSuite) TestNewCreateValidatorCmd() {
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10))).String()),
 			},
-			true, nil, 0,
+			true, 0, nil,
 		},
 		{
 			"valid transaction",
 			[]string{
-				fmt.Sprintf("--%s=%s", cli.FlagPubKey, consPubKey),
-				fmt.Sprintf("--%s=100stake", cli.FlagAmount),
+				fmt.Sprintf("--%s=%s", cli.FlagPubKey, consPubKeyBz),
+				fmt.Sprintf("--%s=%dstake", cli.FlagAmount, 100),
 				fmt.Sprintf("--%s=NewValidator", cli.FlagMoniker),
 				fmt.Sprintf("--%s=AFAF00C4", cli.FlagIdentity),
 				fmt.Sprintf("--%s=https://newvalidator.io", cli.FlagWebsite),
@@ -181,7 +184,7 @@ func (s *IntegrationTestSuite) TestNewCreateValidatorCmd() {
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10))).String()),
 			},
-			false, &sdk.TxResponse{}, 0,
+			false, 0, &sdk.TxResponse{},
 		},
 	}
 
@@ -194,13 +197,24 @@ func (s *IntegrationTestSuite) TestNewCreateValidatorCmd() {
 
 			out, err := clitestutil.ExecTestCLICmd(clientCtx, cmd, tc.args)
 			if tc.expectErr {
-				s.Require().Error(err)
+				require.Error(err)
 			} else {
-				s.Require().NoError(err, out.String())
-				s.Require().NoError(clientCtx.JSONCodec.UnmarshalJSON(out.Bytes(), tc.respType), out.String())
+				require.NoError(err, "test: %s\noutput: %s", tc.name, out.String())
+				err = clientCtx.Codec.UnmarshalJSON(out.Bytes(), tc.respType)
+				require.NoError(err, out.String(), "test: %s, output\n:", tc.name, out.String())
 
 				txResp := tc.respType.(*sdk.TxResponse)
-				s.Require().Equal(tc.expectedCode, txResp.Code, out.String())
+				require.Equal(tc.expectedCode, txResp.Code,
+					"test: %s, output\n:", tc.name, out.String())
+
+				events := txResp.Logs[0].GetEvents()
+				for i := 0; i < len(events); i++ {
+					if events[i].GetType() == "create_validator" {
+						attributes := events[i].GetAttributes()
+						require.Equal(attributes[1].Value, "100")
+						break
+					}
+				}
 			}
 		})
 	}
@@ -225,7 +239,7 @@ func (s *IntegrationTestSuite) TestGetCmdQueryValidator() {
 		},
 		{
 			"happy case",
-			[]string{fmt.Sprintf("%s", val.ValAddress), fmt.Sprintf("--%s=json", tmcli.OutputFlag)},
+			[]string{val.ValAddress.String(), fmt.Sprintf("--%s=json", tmcli.OutputFlag)},
 			false,
 		},
 	}
@@ -240,7 +254,7 @@ func (s *IntegrationTestSuite) TestGetCmdQueryValidator() {
 				s.Require().NotEqual("internal", err.Error())
 			} else {
 				var result types.Validator
-				s.Require().NoError(clientCtx.JSONCodec.UnmarshalJSON(out.Bytes(), &result))
+				s.Require().NoError(clientCtx.Codec.UnmarshalJSON(out.Bytes(), &result))
 				s.Require().Equal(val.ValAddress.String(), result.OperatorAddress)
 			}
 		})
@@ -281,7 +295,7 @@ func (s *IntegrationTestSuite) TestGetCmdQueryValidators() {
 			s.Require().NoError(err)
 
 			var result types.QueryValidatorsResponse
-			s.Require().NoError(clientCtx.JSONCodec.UnmarshalJSON(out.Bytes(), &result))
+			s.Require().NoError(clientCtx.Codec.UnmarshalJSON(out.Bytes(), &result))
 			s.Require().Equal(tc.minValidatorCount, len(result.Validators))
 		})
 	}
@@ -347,7 +361,7 @@ func (s *IntegrationTestSuite) TestGetCmdQueryDelegation() {
 				s.Require().Error(err)
 			} else {
 				s.Require().NoError(err)
-				s.Require().NoError(clientCtx.JSONCodec.UnmarshalJSON(out.Bytes(), tc.respType), out.String())
+				s.Require().NoError(clientCtx.Codec.UnmarshalJSON(out.Bytes(), tc.respType), out.String())
 				s.Require().Equal(tc.expected.String(), tc.respType.String())
 			}
 		})
@@ -403,14 +417,14 @@ func (s *IntegrationTestSuite) TestGetCmdQueryDelegations() {
 				s.Require().Error(err)
 			} else {
 				s.Require().NoError(err)
-				s.Require().NoError(clientCtx.JSONCodec.UnmarshalJSON(out.Bytes(), tc.respType), out.String())
+				s.Require().NoError(clientCtx.Codec.UnmarshalJSON(out.Bytes(), tc.respType), out.String())
 				s.Require().Equal(tc.expected.String(), tc.respType.String())
 			}
 		})
 	}
 }
 
-func (s *IntegrationTestSuite) TestGetCmdQueryDelegationsTo() {
+func (s *IntegrationTestSuite) TestGetCmdQueryValidatorDelegations() {
 	val := s.network.Validators[0]
 
 	testCases := []struct {
@@ -459,7 +473,7 @@ func (s *IntegrationTestSuite) TestGetCmdQueryDelegationsTo() {
 				s.Require().Error(err)
 			} else {
 				s.Require().NoError(err)
-				s.Require().NoError(clientCtx.JSONCodec.UnmarshalJSON(out.Bytes(), tc.respType), out.String())
+				s.Require().NoError(clientCtx.Codec.UnmarshalJSON(out.Bytes(), tc.respType), out.String())
 				s.Require().Equal(tc.expected.String(), tc.respType.String())
 			}
 		})
@@ -504,7 +518,7 @@ func (s *IntegrationTestSuite) TestGetCmdQueryUnbondingDelegations() {
 				s.Require().Error(err)
 			} else {
 				var ubds types.QueryDelegatorUnbondingDelegationsResponse
-				err = val.ClientCtx.JSONCodec.UnmarshalJSON(out.Bytes(), &ubds)
+				err = val.ClientCtx.Codec.UnmarshalJSON(out.Bytes(), &ubds)
 
 				s.Require().NoError(err)
 				s.Require().Len(ubds.UnbondingResponses, 1)
@@ -564,7 +578,7 @@ func (s *IntegrationTestSuite) TestGetCmdQueryUnbondingDelegation() {
 			} else {
 				var ubd types.UnbondingDelegation
 
-				err = val.ClientCtx.JSONCodec.UnmarshalJSON(out.Bytes(), &ubd)
+				err = val.ClientCtx.Codec.UnmarshalJSON(out.Bytes(), &ubd)
 				s.Require().NoError(err)
 				s.Require().Equal(ubd.DelegatorAddress, val.Address.String())
 				s.Require().Equal(ubd.ValidatorAddress, val.ValAddress.String())
@@ -612,7 +626,7 @@ func (s *IntegrationTestSuite) TestGetCmdQueryValidatorUnbondingDelegations() {
 				s.Require().Error(err)
 			} else {
 				var ubds types.QueryValidatorUnbondingDelegationsResponse
-				err = val.ClientCtx.JSONCodec.UnmarshalJSON(out.Bytes(), &ubds)
+				err = val.ClientCtx.Codec.UnmarshalJSON(out.Bytes(), &ubds)
 
 				s.Require().NoError(err)
 				s.Require().Len(ubds.UnbondingResponses, 1)
@@ -661,7 +675,7 @@ func (s *IntegrationTestSuite) TestGetCmdQueryRedelegations() {
 				s.Require().Error(err)
 			} else {
 				var redelegations types.QueryRedelegationsResponse
-				err = val.ClientCtx.JSONCodec.UnmarshalJSON(out.Bytes(), &redelegations)
+				err = val.ClientCtx.Codec.UnmarshalJSON(out.Bytes(), &redelegations)
 
 				s.Require().NoError(err)
 
@@ -738,7 +752,7 @@ func (s *IntegrationTestSuite) TestGetCmdQueryRedelegation() {
 			} else {
 				var redelegations types.QueryRedelegationsResponse
 
-				err = val.ClientCtx.JSONCodec.UnmarshalJSON(out.Bytes(), &redelegations)
+				err = val.ClientCtx.Codec.UnmarshalJSON(out.Bytes(), &redelegations)
 				s.Require().NoError(err)
 
 				s.Require().Len(redelegations.RedelegationResponses, 1)
@@ -750,7 +764,7 @@ func (s *IntegrationTestSuite) TestGetCmdQueryRedelegation() {
 	}
 }
 
-func (s *IntegrationTestSuite) TestGetCmdQueryRedelegationsFrom() {
+func (s *IntegrationTestSuite) TestGetCmdQueryValidatorRedelegations() {
 	val := s.network.Validators[0]
 	val2 := s.network.Validators[1]
 
@@ -789,7 +803,7 @@ func (s *IntegrationTestSuite) TestGetCmdQueryRedelegationsFrom() {
 				s.Require().Error(err)
 			} else {
 				var redelegations types.QueryRedelegationsResponse
-				err = val.ClientCtx.JSONCodec.UnmarshalJSON(out.Bytes(), &redelegations)
+				err = val.ClientCtx.Codec.UnmarshalJSON(out.Bytes(), &redelegations)
 
 				s.Require().NoError(err)
 
@@ -838,11 +852,11 @@ func (s *IntegrationTestSuite) TestGetCmdQueryHistoricalInfo() {
 			if tc.error {
 				s.Require().Error(err)
 			} else {
-				var historical_info types.HistoricalInfo
+				var historicalInfo types.HistoricalInfo
 
-				err = val.ClientCtx.JSONCodec.UnmarshalJSON(out.Bytes(), &historical_info)
+				err = val.ClientCtx.Codec.UnmarshalJSON(out.Bytes(), &historicalInfo)
 				s.Require().NoError(err)
-				s.Require().NotNil(historical_info)
+				s.Require().NotNil(historicalInfo)
 			}
 		})
 	}
@@ -919,7 +933,7 @@ not_bonded_tokens: "0"`, cli.DefaultTokens.Mul(sdk.NewInt(2)).String()),
 	}
 }
 
-func (s *IntegrationTestSuite) TestNewCmdEditValidator() {
+func (s *IntegrationTestSuite) TestNewEditValidatorCmd() {
 	val := s.network.Validators[0]
 
 	details := "bio"
@@ -931,8 +945,8 @@ func (s *IntegrationTestSuite) TestNewCmdEditValidator() {
 		name         string
 		args         []string
 		expectErr    bool
-		respType     proto.Message
 		expectedCode uint32
+		respType     proto.Message
 	}{
 		{
 			"with no edit flag (since all are optional)",
@@ -942,7 +956,7 @@ func (s *IntegrationTestSuite) TestNewCmdEditValidator() {
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10))).String()),
 			},
-			true, nil, 0,
+			true, 0, nil,
 		},
 		{
 			"with no edit flag (since all are optional)",
@@ -952,7 +966,7 @@ func (s *IntegrationTestSuite) TestNewCmdEditValidator() {
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10))).String()),
 			},
-			false, &sdk.TxResponse{}, 0,
+			false, 0, &sdk.TxResponse{},
 		},
 		{
 			"edit validator details",
@@ -963,7 +977,7 @@ func (s *IntegrationTestSuite) TestNewCmdEditValidator() {
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10))).String()),
 			},
-			false, &sdk.TxResponse{}, 0,
+			false, 0, &sdk.TxResponse{},
 		},
 		{
 			"edit validator identity",
@@ -974,7 +988,7 @@ func (s *IntegrationTestSuite) TestNewCmdEditValidator() {
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10))).String()),
 			},
-			false, &sdk.TxResponse{}, 0,
+			false, 0, &sdk.TxResponse{},
 		},
 		{
 			"edit validator security-contact",
@@ -985,7 +999,7 @@ func (s *IntegrationTestSuite) TestNewCmdEditValidator() {
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10))).String()),
 			},
-			false, &sdk.TxResponse{}, 0,
+			false, 0, &sdk.TxResponse{},
 		},
 		{
 			"edit validator website",
@@ -996,7 +1010,7 @@ func (s *IntegrationTestSuite) TestNewCmdEditValidator() {
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10))).String()),
 			},
-			false, &sdk.TxResponse{}, 0,
+			false, 0, &sdk.TxResponse{},
 		},
 		{
 			"with all edit flags",
@@ -1010,7 +1024,7 @@ func (s *IntegrationTestSuite) TestNewCmdEditValidator() {
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10))).String()),
 			},
-			false, &sdk.TxResponse{}, 0,
+			false, 0, &sdk.TxResponse{},
 		},
 	}
 
@@ -1026,7 +1040,7 @@ func (s *IntegrationTestSuite) TestNewCmdEditValidator() {
 				s.Require().Error(err)
 			} else {
 				s.Require().NoError(err, out.String())
-				s.Require().NoError(clientCtx.JSONCodec.UnmarshalJSON(out.Bytes(), tc.respType), out.String())
+				s.Require().NoError(clientCtx.Codec.UnmarshalJSON(out.Bytes(), tc.respType), out.String())
 
 				txResp := tc.respType.(*sdk.TxResponse)
 				s.Require().Equal(tc.expectedCode, txResp.Code, out.String())
@@ -1035,7 +1049,7 @@ func (s *IntegrationTestSuite) TestNewCmdEditValidator() {
 	}
 }
 
-func (s *IntegrationTestSuite) TestNewCmdDelegate() {
+func (s *IntegrationTestSuite) TestNewDelegateCmd() {
 	val := s.network.Validators[0]
 
 	info, _, err := val.ClientCtx.Keyring.NewMnemonic("NewAccount", keyring.English, sdk.FullFundraiserPath, keyring.DefaultBIP39Passphrase, hd.Secp256k1)
@@ -1057,8 +1071,8 @@ func (s *IntegrationTestSuite) TestNewCmdDelegate() {
 		name         string
 		args         []string
 		expectErr    bool
-		respType     proto.Message
 		expectedCode uint32
+		respType     proto.Message
 	}{
 		{
 			"without delegate amount",
@@ -1069,7 +1083,7 @@ func (s *IntegrationTestSuite) TestNewCmdDelegate() {
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10))).String()),
 			},
-			true, nil, 0,
+			true, 0, nil,
 		},
 		{
 			"without validator address",
@@ -1080,7 +1094,7 @@ func (s *IntegrationTestSuite) TestNewCmdDelegate() {
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10))).String()),
 			},
-			true, nil, 0,
+			true, 0, nil,
 		},
 		{
 			"valid transaction of delegate",
@@ -1092,7 +1106,7 @@ func (s *IntegrationTestSuite) TestNewCmdDelegate() {
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10))).String()),
 			},
-			false, &sdk.TxResponse{}, 0,
+			false, 0, &sdk.TxResponse{},
 		},
 	}
 
@@ -1108,7 +1122,7 @@ func (s *IntegrationTestSuite) TestNewCmdDelegate() {
 				s.Require().Error(err)
 			} else {
 				s.Require().NoError(err, out.String())
-				s.Require().NoError(clientCtx.JSONCodec.UnmarshalJSON(out.Bytes(), tc.respType), out.String())
+				s.Require().NoError(clientCtx.Codec.UnmarshalJSON(out.Bytes(), tc.respType), out.String())
 
 				txResp := tc.respType.(*sdk.TxResponse)
 				s.Require().Equal(tc.expectedCode, txResp.Code, out.String())
@@ -1117,7 +1131,7 @@ func (s *IntegrationTestSuite) TestNewCmdDelegate() {
 	}
 }
 
-func (s *IntegrationTestSuite) TestNewCmdRedelegate() {
+func (s *IntegrationTestSuite) TestNewRedelegateCmd() {
 	val := s.network.Validators[0]
 	val2 := s.network.Validators[1]
 
@@ -1125,8 +1139,8 @@ func (s *IntegrationTestSuite) TestNewCmdRedelegate() {
 		name         string
 		args         []string
 		expectErr    bool
-		respType     proto.Message
 		expectedCode uint32
+		respType     proto.Message
 	}{
 		{
 			"without amount",
@@ -1138,7 +1152,7 @@ func (s *IntegrationTestSuite) TestNewCmdRedelegate() {
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10))).String()),
 			},
-			true, nil, 0,
+			true, 0, nil,
 		},
 		{
 			"with wrong source validator address",
@@ -1151,7 +1165,7 @@ func (s *IntegrationTestSuite) TestNewCmdRedelegate() {
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10))).String()),
 			},
-			false, &sdk.TxResponse{}, 4,
+			false, 4, &sdk.TxResponse{},
 		},
 		{
 			"with wrong destination validator address",
@@ -1164,7 +1178,7 @@ func (s *IntegrationTestSuite) TestNewCmdRedelegate() {
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10))).String()),
 			},
-			false, &sdk.TxResponse{}, 39,
+			false, 39, &sdk.TxResponse{},
 		},
 		{
 			"valid transaction of delegate",
@@ -1178,7 +1192,7 @@ func (s *IntegrationTestSuite) TestNewCmdRedelegate() {
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10))).String()),
 			},
-			false, &sdk.TxResponse{}, 0,
+			false, 0, &sdk.TxResponse{},
 		},
 	}
 
@@ -1194,7 +1208,7 @@ func (s *IntegrationTestSuite) TestNewCmdRedelegate() {
 				s.Require().Error(err)
 			} else {
 				s.Require().NoError(err, out.String())
-				s.Require().NoError(clientCtx.JSONCodec.UnmarshalJSON(out.Bytes(), tc.respType), out.String())
+				s.Require().NoError(clientCtx.Codec.UnmarshalJSON(out.Bytes(), tc.respType), out.String())
 
 				txResp := tc.respType.(*sdk.TxResponse)
 				s.Require().Equal(tc.expectedCode, txResp.Code, out.String())
@@ -1203,15 +1217,15 @@ func (s *IntegrationTestSuite) TestNewCmdRedelegate() {
 	}
 }
 
-func (s *IntegrationTestSuite) TestNewCmdUnbond() {
+func (s *IntegrationTestSuite) TestNewUnbondCmd() {
 	val := s.network.Validators[0]
 
 	testCases := []struct {
 		name         string
 		args         []string
 		expectErr    bool
-		respType     proto.Message
 		expectedCode uint32
+		respType     proto.Message
 	}{
 		{
 			"Without unbond amount",
@@ -1222,7 +1236,7 @@ func (s *IntegrationTestSuite) TestNewCmdUnbond() {
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10))).String()),
 			},
-			true, nil, 0,
+			true, 0, nil,
 		},
 		{
 			"Without validator address",
@@ -1233,7 +1247,7 @@ func (s *IntegrationTestSuite) TestNewCmdUnbond() {
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10))).String()),
 			},
-			true, nil, 0,
+			true, 0, nil,
 		},
 		{
 			"valid transaction of unbond",
@@ -1245,7 +1259,7 @@ func (s *IntegrationTestSuite) TestNewCmdUnbond() {
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10))).String()),
 			},
-			false, &sdk.TxResponse{}, 0,
+			false, 0, &sdk.TxResponse{},
 		},
 	}
 
@@ -1261,7 +1275,7 @@ func (s *IntegrationTestSuite) TestNewCmdUnbond() {
 				s.Require().Error(err)
 			} else {
 				s.Require().NoError(err, out.String())
-				s.Require().NoError(clientCtx.JSONCodec.UnmarshalJSON(out.Bytes(), tc.respType), out.String())
+				s.Require().NoError(clientCtx.Codec.UnmarshalJSON(out.Bytes(), tc.respType), out.String())
 
 				txResp := tc.respType.(*sdk.TxResponse)
 				s.Require().Equal(tc.expectedCode, txResp.Code, out.String())
@@ -1309,6 +1323,7 @@ func (s *IntegrationTestSuite) TestBlockResults() {
 
 	// Create a HTTP rpc client.
 	rpcClient, err := http.New(val.RPCAddress, "/websocket")
+	require.NoError(err)
 
 	// Loop until we find a block result with the correct validator updates.
 	// By experience, it happens around 2 blocks after `delHeight`.
@@ -1337,8 +1352,4 @@ func (s *IntegrationTestSuite) TestBlockResults() {
 
 		s.network.WaitForNextBlock()
 	}
-}
-
-func TestIntegrationTestSuite(t *testing.T) {
-	suite.Run(t, new(IntegrationTestSuite))
 }

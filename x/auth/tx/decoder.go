@@ -12,7 +12,7 @@ import (
 	"github.com/cosmos/cosmos-sdk/types/tx"
 )
 
-// DefaultTxDecoder returns a default protobuf TxDecoder using the provided Codec.
+// DefaultTxDecoder returns a default protobuf TxDecoder using the provided Marshaler.
 func DefaultTxDecoder(cdc codec.ProtoCodecMarshaler) sdk.TxDecoder {
 	return func(txBytes []byte) (sdk.Tx, error) {
 		// Make sure txBytes follow ADR-027.
@@ -75,7 +75,7 @@ func DefaultTxDecoder(cdc codec.ProtoCodecMarshaler) sdk.TxDecoder {
 	}
 }
 
-// DefaultJSONTxDecoder returns a default protobuf JSON TxDecoder using the provided Codec.
+// DefaultJSONTxDecoder returns a default protobuf JSON TxDecoder using the provided Marshaler.
 func DefaultJSONTxDecoder(cdc codec.ProtoCodecMarshaler) sdk.TxDecoder {
 	return func(txBytes []byte) (sdk.Tx, error) {
 		var theTx tx.Tx

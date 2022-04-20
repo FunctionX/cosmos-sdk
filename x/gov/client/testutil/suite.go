@@ -1,12 +1,8 @@
-//go:build norace
-// +build norace
-
-package cli_test
+package testutil
 
 import (
 	"fmt"
 	"strings"
-	"testing"
 
 	"github.com/cosmos/cosmos-sdk/testutil"
 
@@ -20,7 +16,6 @@ import (
 	"github.com/cosmos/cosmos-sdk/testutil/network"
 	sdk "github.com/cosmos/cosmos-sdk/types"
 	"github.com/cosmos/cosmos-sdk/x/gov/client/cli"
-	govtestutil "github.com/cosmos/cosmos-sdk/x/gov/client/testutil"
 	"github.com/cosmos/cosmos-sdk/x/gov/types"
 )
 
@@ -31,11 +26,12 @@ type IntegrationTestSuite struct {
 	network *network.Network
 }
 
+func NewIntegrationTestSuite(cfg network.Config) *IntegrationTestSuite {
+	return &IntegrationTestSuite{cfg: cfg}
+}
+
 func (s *IntegrationTestSuite) SetupSuite() {
 	s.T().Log("setting up integration test suite")
-
-	s.cfg = network.DefaultConfig()
-	s.cfg.NumValidators = 1
 
 	s.network = network.New(s.T(), s.cfg)
 
@@ -45,7 +41,7 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	val := s.network.Validators[0]
 
 	// create a proposal with deposit
-	_, err = govtestutil.MsgSubmitProposal(val.ClientCtx, val.Address.String(),
+	_, err = MsgSubmitProposal(val.ClientCtx, val.Address.String(),
 		"Text Proposal 1", "Where is the title!?", types.ProposalTypeText,
 		fmt.Sprintf("--%s=%s", cli.FlagDeposit, sdk.NewCoin(s.cfg.BondDenom, types.DefaultMinDepositTokens).String()))
 	s.Require().NoError(err)
@@ -53,14 +49,26 @@ func (s *IntegrationTestSuite) SetupSuite() {
 	s.Require().NoError(err)
 
 	// vote for proposal
-	_, err = govtestutil.MsgVote(val.ClientCtx, val.Address.String(), "1", "yes")
+	_, err = MsgVote(val.ClientCtx, val.Address.String(), "1", "yes")
 	s.Require().NoError(err)
 
 	// create a proposal without deposit
-	_, err = govtestutil.MsgSubmitProposal(val.ClientCtx, val.Address.String(),
+	_, err = MsgSubmitProposal(val.ClientCtx, val.Address.String(),
 		"Text Proposal 2", "Where is the title!?", types.ProposalTypeText)
 	s.Require().NoError(err)
 	_, err = s.network.WaitForHeight(1)
+	s.Require().NoError(err)
+
+	// create a proposal3 with deposit
+	_, err = MsgSubmitProposal(val.ClientCtx, val.Address.String(),
+		"Text Proposal 3", "Where is the title!?", types.ProposalTypeText,
+		fmt.Sprintf("--%s=%s", cli.FlagDeposit, sdk.NewCoin(s.cfg.BondDenom, types.DefaultMinDepositTokens).String()))
+	s.Require().NoError(err)
+	_, err = s.network.WaitForHeight(1)
+	s.Require().NoError(err)
+
+	// vote for proposal3 as val
+	_, err = MsgVote(val.ClientCtx, val.Address.String(), "3", "yes")
 	s.Require().NoError(err)
 }
 
@@ -258,7 +266,7 @@ func (s *IntegrationTestSuite) TestCmdTally() {
 				s.Require().Error(err)
 			} else {
 				var tally types.TallyResult
-				s.Require().NoError(clientCtx.JSONCodec.UnmarshalJSON(out.Bytes(), &tally), out.String())
+				s.Require().NoError(clientCtx.Codec.UnmarshalJSON(out.Bytes(), &tally), out.String())
 				s.Require().Equal(tally, tc.expectedOutput)
 			}
 		})
@@ -285,8 +293,8 @@ func (s *IntegrationTestSuite) TestNewCmdSubmitProposal() {
 		name         string
 		args         []string
 		expectErr    bool
-		respType     proto.Message
 		expectedCode uint32
+		respType     proto.Message
 	}{
 		{
 			"invalid proposal (file)",
@@ -296,7 +304,7 @@ func (s *IntegrationTestSuite) TestNewCmdSubmitProposal() {
 				fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10))).String()),
 			},
-			true, nil, 0,
+			true, 0, nil,
 		},
 		{
 			"invalid proposal",
@@ -308,7 +316,7 @@ func (s *IntegrationTestSuite) TestNewCmdSubmitProposal() {
 				fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10))).String()),
 			},
-			true, nil, 0,
+			true, 0, nil,
 		},
 		{
 			"valid transaction (file)",
@@ -319,7 +327,7 @@ func (s *IntegrationTestSuite) TestNewCmdSubmitProposal() {
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10))).String()),
 			},
-			false, &sdk.TxResponse{}, 0,
+			false, 0, &sdk.TxResponse{},
 		},
 		{
 			"valid transaction",
@@ -333,7 +341,7 @@ func (s *IntegrationTestSuite) TestNewCmdSubmitProposal() {
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
 				fmt.Sprintf("--%s=%s", flags.FlagFees, sdk.NewCoins(sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10))).String()),
 			},
-			false, &sdk.TxResponse{}, 0,
+			false, 0, &sdk.TxResponse{},
 		},
 	}
 
@@ -349,7 +357,7 @@ func (s *IntegrationTestSuite) TestNewCmdSubmitProposal() {
 				s.Require().Error(err)
 			} else {
 				s.Require().NoError(err)
-				s.Require().NoError(clientCtx.JSONCodec.UnmarshalJSON(out.Bytes(), tc.respType), out.String())
+				s.Require().NoError(clientCtx.Codec.UnmarshalJSON(out.Bytes(), tc.respType), out.String())
 				txResp := tc.respType.(*sdk.TxResponse)
 				s.Require().Equal(tc.expectedCode, txResp.Code, out.String())
 			}
@@ -398,7 +406,7 @@ func (s *IntegrationTestSuite) TestCmdGetProposal() {
 			} else {
 				s.Require().NoError(err)
 				var proposal types.Proposal
-				s.Require().NoError(clientCtx.JSONCodec.UnmarshalJSON(out.Bytes(), &proposal), out.String())
+				s.Require().NoError(clientCtx.Codec.UnmarshalJSON(out.Bytes(), &proposal), out.String())
 				s.Require().Equal(title, proposal.GetTitle())
 			}
 		})
@@ -444,8 +452,8 @@ func (s *IntegrationTestSuite) TestCmdGetProposals() {
 				s.Require().NoError(err)
 				var proposals types.QueryProposalsResponse
 
-				s.Require().NoError(clientCtx.JSONCodec.UnmarshalJSON(out.Bytes(), &proposals), out.String())
-				s.Require().Len(proposals.Proposals, 2)
+				s.Require().NoError(clientCtx.Codec.UnmarshalJSON(out.Bytes(), &proposals), out.String())
+				s.Require().Len(proposals.Proposals, 3)
 			}
 		})
 	}
@@ -490,7 +498,7 @@ func (s *IntegrationTestSuite) TestCmdQueryDeposits() {
 				s.Require().NoError(err)
 
 				var deposits types.QueryDepositsResponse
-				s.Require().NoError(clientCtx.JSONCodec.UnmarshalJSON(out.Bytes(), &deposits), out.String())
+				s.Require().NoError(clientCtx.Codec.UnmarshalJSON(out.Bytes(), &deposits), out.String())
 				s.Require().Len(deposits.Deposits, 1)
 			}
 		})
@@ -546,7 +554,7 @@ func (s *IntegrationTestSuite) TestCmdQueryDeposit() {
 				s.Require().NoError(err)
 
 				var deposit types.Deposit
-				s.Require().NoError(clientCtx.JSONCodec.UnmarshalJSON(out.Bytes(), &deposit), out.String())
+				s.Require().NoError(clientCtx.Codec.UnmarshalJSON(out.Bytes(), &deposit), out.String())
 				s.Require().Equal(depositAmount.String(), deposit.Amount.String())
 			}
 		})
@@ -565,7 +573,7 @@ func (s *IntegrationTestSuite) TestNewCmdDeposit() {
 		{
 			"without proposal id",
 			[]string{
-				sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10)).String(), //10stake
+				sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10)).String(), // 10stake
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
 				fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
@@ -588,7 +596,7 @@ func (s *IntegrationTestSuite) TestNewCmdDeposit() {
 			"deposit on non existing proposal",
 			[]string{
 				"10",
-				sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10)).String(), //10stake
+				sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10)).String(), // 10stake
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
 				fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
@@ -600,7 +608,7 @@ func (s *IntegrationTestSuite) TestNewCmdDeposit() {
 			"deposit on non existing proposal",
 			[]string{
 				"1",
-				sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10)).String(), //10stake
+				sdk.NewCoin(s.cfg.BondDenom, sdk.NewInt(10)).String(), // 10stake
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
 				fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
@@ -624,7 +632,7 @@ func (s *IntegrationTestSuite) TestNewCmdDeposit() {
 			} else {
 				s.Require().NoError(err)
 
-				s.Require().NoError(clientCtx.JSONCodec.UnmarshalJSON(out.Bytes(), &resp), out.String())
+				s.Require().NoError(clientCtx.Codec.UnmarshalJSON(out.Bytes(), &resp), out.String())
 				s.Require().Equal(tc.expectedCode, resp.Code, out.String())
 			}
 		})
@@ -675,64 +683,8 @@ func (s *IntegrationTestSuite) TestCmdQueryVotes() {
 				s.Require().NoError(err)
 
 				var votes types.QueryVotesResponse
-				s.Require().NoError(clientCtx.JSONCodec.UnmarshalJSON(out.Bytes(), &votes), out.String())
+				s.Require().NoError(clientCtx.Codec.UnmarshalJSON(out.Bytes(), &votes), out.String())
 				s.Require().Len(votes.Votes, 1)
-			}
-		})
-	}
-}
-
-func (s *IntegrationTestSuite) TestCmdQueryVote() {
-	val := s.network.Validators[0]
-
-	testCases := []struct {
-		name      string
-		args      []string
-		expectErr bool
-	}{
-		{
-			"get vote of non existing proposal",
-			[]string{
-				"10",
-				val.Address.String(),
-			},
-			true,
-		},
-		{
-			"get vote by wrong voter",
-			[]string{
-				"1",
-				"wrong address",
-			},
-			true,
-		},
-		{
-			"vote for valid proposal",
-			[]string{
-				"1",
-				val.Address.String(),
-				fmt.Sprintf("--%s=json", tmcli.OutputFlag),
-			},
-			false,
-		},
-	}
-
-	for _, tc := range testCases {
-		tc := tc
-		s.Run(tc.name, func() {
-			cmd := cli.GetCmdQueryVote()
-			clientCtx := val.ClientCtx
-
-			out, err := clitestutil.ExecTestCLICmd(clientCtx, cmd, tc.args)
-
-			if tc.expectErr {
-				s.Require().Error(err)
-			} else {
-				s.Require().NoError(err)
-
-				var vote types.Vote
-				s.Require().NoError(clientCtx.JSONCodec.UnmarshalJSON(out.Bytes(), &vote), out.String())
-				s.Require().Equal(types.OptionYes, vote.Option)
 			}
 		})
 	}
@@ -756,7 +708,7 @@ func (s *IntegrationTestSuite) TestNewCmdVote() {
 			"vote for invalid proposal",
 			[]string{
 				"10",
-				fmt.Sprintf("%s", "yes"),
+				"yes",
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
 				fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
@@ -768,7 +720,7 @@ func (s *IntegrationTestSuite) TestNewCmdVote() {
 			"valid vote",
 			[]string{
 				"1",
-				fmt.Sprintf("%s", "yes"),
+				"yes",
 				fmt.Sprintf("--%s=%s", flags.FlagFrom, val.Address.String()),
 				fmt.Sprintf("--%s=true", flags.FlagSkipConfirmation),
 				fmt.Sprintf("--%s=%s", flags.FlagBroadcastMode, flags.BroadcastBlock),
@@ -791,13 +743,9 @@ func (s *IntegrationTestSuite) TestNewCmdVote() {
 				s.Require().Error(err)
 			} else {
 				s.Require().NoError(err)
-				s.Require().NoError(clientCtx.JSONCodec.UnmarshalJSON(out.Bytes(), &txResp), out.String())
+				s.Require().NoError(clientCtx.Codec.UnmarshalJSON(out.Bytes(), &txResp), out.String())
 				s.Require().Equal(tc.expectedCode, txResp.Code, out.String())
 			}
 		})
 	}
-}
-
-func TestIntegrationTestSuite(t *testing.T) {
-	suite.Run(t, new(IntegrationTestSuite))
 }
