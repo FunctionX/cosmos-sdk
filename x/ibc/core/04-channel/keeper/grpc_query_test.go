@@ -991,6 +991,31 @@ func (suite *KeeperTestSuite) TestQueryPacketAcknowledgements() {
 			true,
 		},
 		{
+			"success, filtered res",
+			func() {
+				_, _, _, _, channelA, _ := suite.coordinator.Setup(suite.chainA, suite.chainB, types.UNORDERED)
+				var commitments []uint64
+
+				for i := uint64(0); i < 100; i++ {
+					ack := types.NewPacketState(channelA.PortID, channelA.ID, i, []byte(fmt.Sprintf("hash_%d", i)))
+					suite.chainA.App.IBCKeeper.ChannelKeeper.SetPacketAcknowledgement(suite.chainA.GetContext(), ack.PortId, ack.ChannelId, ack.Sequence, ack.Data)
+
+					if i < 10 { // populate the store with 100 and query for 10 specific acks
+						expAcknowledgements = append(expAcknowledgements, &ack)
+						commitments = append(commitments, ack.Sequence)
+					}
+				}
+
+				req = &types.QueryPacketAcknowledgementsRequest{
+					PortId:                    channelA.PortID,
+					ChannelId:                 channelA.ID,
+					PacketCommitmentSequences: commitments,
+					Pagination:                nil,
+				}
+			},
+			true,
+		},
+		{
 			"success",
 			func() {
 				_, _, _, _, channelA, _ := suite.coordinator.Setup(suite.chainA, suite.chainB, types.UNORDERED)
