@@ -34,6 +34,14 @@ func (k Keeper) DeleteHistoricalInfo(ctx sdk.Context, height int64) {
 	store.Delete(key)
 }
 
+// HasHistoricalInfo has the historical info at a given height
+func (k Keeper) HasHistoricalInfo(ctx sdk.Context, height int64) bool {
+	store := ctx.KVStore(k.storeKey)
+	key := types.GetHistoricalInfoKey(height)
+
+	return store.Has(key)
+}
+
 // IterateHistoricalInfo provides an interator over all stored HistoricalInfo
 //  objects. For each HistoricalInfo object, cb will be called. If the cb returns
 // true, the iterator will close and stop.
@@ -76,8 +84,7 @@ func (k Keeper) TrackHistoricalInfo(ctx sdk.Context) {
 	// over the historical entries starting from the most recent version to be pruned
 	// and then return at the first empty entry.
 	for i := ctx.BlockHeight() - int64(entryNum); i >= 0; i-- {
-		_, found := k.GetHistoricalInfo(ctx, i)
-		if found {
+		if k.HasHistoricalInfo(ctx, i) {
 			k.DeleteHistoricalInfo(ctx, i)
 		} else {
 			break

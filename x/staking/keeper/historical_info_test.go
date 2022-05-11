@@ -142,3 +142,34 @@ func TestGetAllHistoricalInfo(t *testing.T) {
 	infos := app.StakingKeeper.GetAllHistoricalInfo(ctx)
 	require.Equal(t, expHistInfos, infos)
 }
+
+func TestHasHistoricalInfo(t *testing.T) {
+	_, app, ctx := createTestInput()
+
+	addrDels := simapp.AddTestAddrsIncremental(app, ctx, 50, sdk.NewInt(0))
+	addrVals := simapp.ConvertAddrsToValAddrs(addrDels)
+
+	validators := make([]types.Validator, len(addrVals))
+
+	for i, valAddr := range addrVals {
+		validators[i] = teststaking.NewValidator(t, valAddr, PKs[i])
+	}
+
+	hi := types.NewHistoricalInfo(ctx.BlockHeader(), validators)
+	app.StakingKeeper.SetHistoricalInfo(ctx, 2, &hi)
+
+	found := app.StakingKeeper.HasHistoricalInfo(ctx, 2)
+	require.True(t, found, "HistoricalInfo not found after set")
+	recv, found := app.StakingKeeper.GetHistoricalInfo(ctx, 2)
+	require.True(t, found, "HistoricalInfo not found after set")
+	require.Equal(t, hi, recv, "HistoricalInfo not equal")
+	require.True(t, sort.IsSorted(types.ValidatorsByVotingPower(recv.Valset)), "HistoricalInfo validators is not sorted")
+
+	app.StakingKeeper.DeleteHistoricalInfo(ctx, 2)
+
+	found = app.StakingKeeper.HasHistoricalInfo(ctx, 2)
+	require.False(t, found, "HistoricalInfo found after delete")
+	recv, found = app.StakingKeeper.GetHistoricalInfo(ctx, 2)
+	require.False(t, found, "HistoricalInfo found after delete")
+	require.Equal(t, types.HistoricalInfo{}, recv, "HistoricalInfo is not empty")
+}
