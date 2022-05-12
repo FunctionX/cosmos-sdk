@@ -51,15 +51,11 @@ func (k Keeper) AddPubkey(ctx sdk.Context, pubkey cryptotypes.PubKey) error {
 	return nil
 }
 
-// GetPubkey returns the pubkey from the adddress-pubkey relation
-func (k Keeper) GetPubkey(ctx sdk.Context, a cryptotypes.Address) (cryptotypes.PubKey, error) {
+// HasPubkey returns the bool from the adddress-pubkey relation
+func (k Keeper) HasPubkey(ctx sdk.Context, a cryptotypes.Address) bool {
 	store := ctx.KVStore(k.storeKey)
 	bz := store.Get(types.AddrPubkeyRelationKey(a))
-	if bz == nil {
-		return nil, fmt.Errorf("address %s not found", sdk.ConsAddress(a))
-	}
-	var pk cryptotypes.PubKey
-	return pk, k.cdc.UnmarshalInterface(bz, &pk)
+	return bz != nil
 }
 
 // Slash attempts to slash a validator. The slash is delegated to the staking

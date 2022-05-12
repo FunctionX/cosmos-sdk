@@ -18,7 +18,7 @@ type (
 	// SlashingKeeper defines the slashing module interface contract needed by the
 	// evidence module.
 	SlashingKeeper interface {
-		GetPubkey(sdk.Context, cryptotypes.Address) (cryptotypes.PubKey, error)
+		HasPubkey(sdk.Context, cryptotypes.Address) bool
 		IsTombstoned(sdk.Context, sdk.ConsAddress) bool
 		HasValidatorSigningInfo(sdk.Context, sdk.ConsAddress) bool
 		Tombstone(sdk.Context, sdk.ConsAddress)

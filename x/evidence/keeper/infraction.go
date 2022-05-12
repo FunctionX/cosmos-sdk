@@ -26,7 +26,7 @@ func (k Keeper) HandleEquivocationEvidence(ctx sdk.Context, evidence *types.Equi
 	logger := k.Logger(ctx)
 	consAddr := evidence.GetConsensusAddress()
 
-	if _, err := k.slashingKeeper.GetPubkey(ctx, consAddr.Bytes()); err != nil {
+	if found := k.slashingKeeper.HasPubkey(ctx, consAddr.Bytes()); !found {
 		// Ignore evidence that cannot be handled.
 		//
 		// NOTE: We used to panic with:
