@@ -26,5 +26,5 @@ func TestBech32KeysOutput(t *testing.T) {
 	out, err := MkAccKeyOutput(info)
 	require.NoError(t, err)
 	require.Equal(t, expectedOutput, out)
-	require.Equal(t, `{Name:multisig Type:multi Eip55Address:0x9a4fF4eA75776B118b6d13B3aBD8737511CcdAE0 Address:cosmos1nf8lf6n4wa43rzmdzwe6hkrnw5guekhqt595cw PubKey:{"@type":"/cosmos.crypto.multisig.LegacyAminoPubKey","threshold":1,"public_keys":[{"@type":"/cosmos.crypto.secp256k1.PubKey","key":"AurroA7jvfPd1AadmmOvWM2rJSwipXfRf8yD6pLbA2DJ"}]} Mnemonic: Algo:multi}`, fmt.Sprintf("%+v", out))
+	require.Equal(t, `{Name:multisig Type:multi Eip55Address: Address:cosmos1nf8lf6n4wa43rzmdzwe6hkrnw5guekhqt595cw PubKey:{"@type":"/cosmos.crypto.multisig.LegacyAminoPubKey","threshold":1,"public_keys":[{"@type":"/cosmos.crypto.secp256k1.PubKey","key":"AurroA7jvfPd1AadmmOvWM2rJSwipXfRf8yD6pLbA2DJ"}]} Mnemonic: Algo:multi}`, fmt.Sprintf("%+v", out))
 }

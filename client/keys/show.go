@@ -123,6 +123,9 @@ func runShowCmd(cmd *cobra.Command, args []string) (err error) {
 			return err
 		}
 		out := ko.Address
+		if info.GetAlgo() == "eth_secp256k1" {
+			out = ko.Eip55Address
+		}
 		if isShowPubKey {
 			out = ko.PubKey
 		}

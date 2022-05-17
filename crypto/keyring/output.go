@@ -33,14 +33,17 @@ func NewKeyOutput(keyInfo Info, a sdk.Address) (KeyOutput, error) { // nolint:in
 	if err != nil {
 		return KeyOutput{}, err
 	}
-	return KeyOutput{
-		Name:         keyInfo.GetName(),
-		Type:         keyInfo.GetType().String(),
-		Eip55Address: string(checksumHex(a.Bytes())),
-		Address:      a.String(),
-		PubKey:       string(bz),
-		Algo:         string(keyInfo.GetAlgo()),
-	}, nil
+	keyOutput := KeyOutput{
+		Name:    keyInfo.GetName(),
+		Type:    keyInfo.GetType().String(),
+		Address: a.String(),
+		PubKey:  string(bz),
+		Algo:    string(keyInfo.GetAlgo()),
+	}
+	if keyInfo.GetAlgo() == "eth_secp256k1" {
+		keyOutput.Eip55Address = string(checksumHex(a.Bytes()))
+	}
+	return keyOutput, nil
 }
 
 func checksumHex(addr []byte) []byte {
