@@ -19,6 +19,8 @@ import (
 const (
 	// FlagAddress is the flag for the user's address on the command line.
 	FlagAddress = "address"
+	// FlagEip55Address is the flag for the user's EIP address on the command line.
+	FlagEip55Address = "eip-address"
 	// FlagPublicKey represents the user's public key on the command line.
 	FlagPublicKey = "pubkey"
 	// FlagBechPrefix defines a desired Bech32 prefix encoding for a key.
@@ -44,7 +46,8 @@ consisting of all the keys provided by name and multisig threshold.`,
 	}
 	f := cmd.Flags()
 	f.String(FlagBechPrefix, sdk.PrefixAccount, "The Bech32 prefix encoding for a key (acc|val|cons)")
-	f.BoolP(FlagAddress, "a", false, "Output the address only (overrides --output)")
+	f.BoolP(FlagAddress, "a", false, "Output the bech32 format address only (overrides --output)")
+	f.BoolP(FlagEip55Address, "e", false, "Output the EIP55 address only (overrides --output)")
 	f.BoolP(FlagPublicKey, "p", false, "Output the public key only (overrides --output)")
 	f.BoolP(FlagDevice, "d", false, "Output the address in a ledger device")
 	f.Int(flagMultiSigThreshold, 1, "K out of N required signatures")
@@ -89,6 +92,7 @@ func runShowCmd(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	isShowAddr, _ := cmd.Flags().GetBool(FlagAddress)
+	isShowEip55Addr, _ := cmd.Flags().GetBool(FlagEip55Address)
 	isShowPubKey, _ := cmd.Flags().GetBool(FlagPublicKey)
 	isShowDevice, _ := cmd.Flags().GetBool(FlagDevice)
 
@@ -98,11 +102,11 @@ func runShowCmd(cmd *cobra.Command, args []string) (err error) {
 		isOutputSet = tmp.Changed
 	}
 
-	if isShowAddr && isShowPubKey {
+	if isShowEip55Addr && isShowAddr && isShowPubKey {
 		return errors.New("cannot use both --address and --pubkey at once")
 	}
 
-	if isOutputSet && (isShowAddr || isShowPubKey) {
+	if isOutputSet && (isShowEip55Addr || isShowAddr || isShowPubKey) {
 		return errors.New("cannot use --output with --address or --pubkey")
 	}
 
@@ -117,13 +121,13 @@ func runShowCmd(cmd *cobra.Command, args []string) (err error) {
 	}
 
 	switch {
-	case isShowAddr, isShowPubKey:
+	case isShowEip55Addr, isShowAddr, isShowPubKey:
 		ko, err := bechKeyOut(info)
 		if err != nil {
 			return err
 		}
 		out := ko.Address
-		if info.GetAlgo() == "eth_secp256k1" {
+		if isShowEip55Addr {
 			out = ko.Eip55Address
 		}
 		if isShowPubKey {
