@@ -11,6 +11,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var version = ""
+
 func init() {
 	versionCmd.Flags().StringP(OutputFlag, "o", "text", "Output format (text|json)")
 	rootCmd.AddCommand(versionCmd)
@@ -35,12 +37,31 @@ var versionCmd = &cobra.Command{
 }
 
 func getVersion() string {
-	version, ok := debug.ReadBuildInfo()
+	buildInfo, ok := debug.ReadBuildInfo()
 	if !ok {
 		panic("failed to get cosmovisor version")
 	}
 
-	return strings.TrimSpace(version.Main.Version)
+	// default version
+	mainVersion := strings.TrimSpace(buildInfo.Main.Version)
+	if !strings.EqualFold(mainVersion, "(devel)") {
+		return mainVersion
+	}
+
+	// ldflags version
+	if version != "" {
+		return version
+	}
+
+	// no version
+	commit := "unknown"
+	for _, setting := range buildInfo.Settings {
+		if setting.Key == "vcs.revision" {
+			commit = strings.TrimSpace(setting.Value)
+			break
+		}
+	}
+	return fmt.Sprintf("devel-%s", commit)
 }
 
 func printVersion(logger *zerolog.Logger, args []string) error {
