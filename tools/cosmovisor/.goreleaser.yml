@@ -21,13 +21,13 @@ builds:
       - CGO_ENABLED=0
 
 archives:
-  - name_template: '{{ replace .Version "cosmovisor/" "cosmovisor-" }}-{{ .Os }}-{{ .Arch }}'
+  - name_template: '{{ replace .Version "fxcorevisor/" "fxcorevisor-" }}-{{ .Os }}-{{ .Arch }}'
     format_overrides:
       - goos: windows
         format: zip
 
 checksum:
-  name_template: 'SHA256SUMS-{{ replace .Version "cosmovisor/" "cosmovisor-" }}.txt'
+  name_template: 'SHA256SUMS-{{ replace .Version "fxcorevisor/" "fxcorevisor-" }}.txt'
   algorithm: sha256
 
 changelog:
