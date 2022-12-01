@@ -56,7 +56,7 @@ func (l Launcher) Run(args []string, stdout, stderr io.Writer) (bool, error) {
 	}
 
 	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGQUIT, syscall.SIGTERM)
+	signal.Notify(sigs, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
 	go func() {
 		sig := <-sigs
 		if err := cmd.Process.Signal(sig); err != nil {
@@ -203,7 +203,8 @@ func (l *Launcher) executePreUpgradeCmd() error {
 		return fmt.Errorf("error while getting current binary path: %w", err)
 	}
 
-	result, err := exec.Command(bin, "pre-upgrade").Output()
+	setHomeDir := fmt.Sprintf("--home=%s", l.cfg.Home)
+	result, err := exec.Command(bin, "pre-upgrade", setHomeDir).Output()
 	if err != nil {
 		return err
 	}

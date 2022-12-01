@@ -46,10 +46,15 @@ func getVersion() string {
 func printVersion(logger *zerolog.Logger, args []string) error {
 	fmt.Printf("cosmovisor version: %s\n", getVersion())
 
-	if err := Run(logger, append([]string{"version"}, args...)); err != nil {
+	// disable logger
+	l := logger.Level(zerolog.Disabled)
+	logger = &l
+
+	buf := new(strings.Builder)
+	if err := Run(logger, append([]string{"version"}, args...), StdOutRunOption(buf)); err != nil {
 		return fmt.Errorf("failed to run version command: %w", err)
 	}
-
+	fmt.Printf("app version: %s", buf.String())
 	return nil
 }
 

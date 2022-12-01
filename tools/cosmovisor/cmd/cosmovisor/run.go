@@ -24,6 +24,18 @@ var runCmd = &cobra.Command{
 
 // Run runs the configured program with the given args and monitors it for upgrades.
 func Run(logger *zerolog.Logger, args []string, options ...RunOption) error {
+	// check cosmovisor directory before get config
+	if err := cosmovisor.ReplaceCosmovisor(logger); err != nil {
+		return err
+	}
+
+	defer func() {
+		//remove cosmovisor after node stoped
+		if err := cosmovisor.RemoveCosmovisor(logger); err != nil {
+			logger.Error().Err(err).Msg("remove cosmovisor")
+		}
+	}()
+
 	cfg, err := cosmovisor.GetConfigFromEnv()
 	if err != nil {
 		return err
@@ -32,6 +44,11 @@ func Run(logger *zerolog.Logger, args []string, options ...RunOption) error {
 	runCfg := DefaultRunConfig
 	for _, opt := range options {
 		opt(&runCfg)
+	}
+
+	// choose version
+	if err = cosmovisor.ChooseVersion(logger, cfg); err != nil {
+		return err
 	}
 
 	launcher, err := cosmovisor.NewLauncher(logger, cfg)
