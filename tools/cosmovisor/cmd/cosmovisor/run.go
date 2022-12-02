@@ -30,7 +30,7 @@ func Run(logger *zerolog.Logger, args []string, options ...RunOption) error {
 	}
 
 	defer func() {
-		//remove cosmovisor after node stoped
+		// remove cosmovisor after node stoped
 		if err := cosmovisor.RemoveCosmovisor(logger); err != nil {
 			logger.Error().Err(err).Msg("remove cosmovisor")
 		}

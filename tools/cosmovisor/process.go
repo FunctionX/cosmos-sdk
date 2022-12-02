@@ -55,16 +55,27 @@ func (l Launcher) Run(args []string, stdout, stderr io.Writer) (bool, error) {
 		return false, fmt.Errorf("launching process %s %s failed: %w", bin, strings.Join(args, " "), err)
 	}
 
+	cmdDone := make(chan error)
+	go func() {
+		cmdDone <- cmd.Wait()
+	}()
+
 	sigs := make(chan os.Signal, 1)
 	signal.Notify(sigs, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT)
 	go func() {
-		sig := <-sigs
-		if err := cmd.Process.Signal(sig); err != nil {
-			l.logger.Fatal().Err(err).Str("bin", bin).Msg("terminated")
+		select {
+		case sig := <-sigs:
+			if err := cmd.Process.Signal(sig); err != nil {
+				l.logger.Fatal().Err(err).Str("bin", bin).Msg("terminated")
+			}
+		case err := <-cmdDone:
+			if err != nil {
+				l.logger.Error().Err(err).Msg("run command done")
+			}
 		}
 	}()
 
-	if needsUpdate, err := l.WaitForUpgradeOrExit(cmd); err != nil || !needsUpdate {
+	if needsUpdate, err := l.WaitForUpgradeOrExit(cmd, cmdDone); err != nil || !needsUpdate {
 		return false, err
 	}
 
@@ -96,16 +107,11 @@ func (l Launcher) Run(args []string, stdout, stderr io.Writer) (bool, error) {
 // It returns (false, err) if the process died by itself, or there was an issue reading the upgrade-info file.
 // It returns (false, nil) if the process exited normally without triggering an upgrade. This is very unlikely
 // to happened with "start" but may happened with short-lived commands like `gaiad export ...`
-func (l Launcher) WaitForUpgradeOrExit(cmd *exec.Cmd) (bool, error) {
+func (l Launcher) WaitForUpgradeOrExit(cmd *exec.Cmd, cmdDone chan error) (bool, error) {
 	currentUpgrade, err := l.cfg.UpgradeInfo()
 	if err != nil {
 		l.logger.Error().Err(err)
 	}
-
-	cmdDone := make(chan error)
-	go func() {
-		cmdDone <- cmd.Wait()
-	}()
 
 	select {
 	case <-l.fw.MonitorUpdate(currentUpgrade):

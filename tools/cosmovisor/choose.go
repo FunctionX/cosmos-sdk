@@ -3,6 +3,11 @@ package cosmovisor
 import (
 	"encoding/json"
 	"fmt"
+	"net/url"
+	"os"
+	"path/filepath"
+	"sort"
+
 	upgradetypes "github.com/cosmos/cosmos-sdk/x/upgrade/types"
 	"github.com/rs/zerolog"
 	"github.com/spf13/viper"
@@ -10,13 +15,8 @@ import (
 	"github.com/tendermint/tendermint/node"
 	"github.com/tendermint/tendermint/store"
 	tmtypes "github.com/tendermint/tendermint/types"
-	"io"
-	"io/fs"
-	"net/url"
-	"os"
-	"path"
-	"path/filepath"
-	"sort"
+
+	"github.com/otiai10/copy"
 )
 
 const (
@@ -59,7 +59,7 @@ func ReplaceCosmovisor(logger *zerolog.Logger) error {
 		return err
 	}
 
-	//check upgrades-info directory
+	// check upgrades-info directory
 	upgradesInfoPath := os.Getenv(EnvUpgradesInfoPath)
 	chainUpgradesInfoPath := filepath.Join(upgradesInfoPath, chainID)
 	if !filepath.IsAbs(chainUpgradesInfoPath) {
@@ -75,15 +75,15 @@ func ReplaceCosmovisor(logger *zerolog.Logger) error {
 	logger.Info().Str("path", cosmovisorPath).Msg("remove default cosmovisor")
 	os.RemoveAll(cosmovisorPath)
 
-	//copy binary to default cosmovisor
+	// copy binary to default cosmovisor
 	logger.Info().Str("src", binaryPath).Str("dest", cosmovisorPath).Msg("copy binary")
-	if err := copyDir(binaryPath, cosmovisorPath); err != nil {
+	if err := copy.Copy(binaryPath, cosmovisorPath); err != nil {
 		return fmt.Errorf("copy binary error %s", err.Error())
 	}
 
-	//copy upgrades-info to default cosmovisor
+	// copy upgrades-info to default cosmovisor
 	logger.Info().Str("src", chainUpgradesInfoPath).Str("dest", cosmovisorPath).Msg("copy upgrades-info")
-	if err := copyDir(chainUpgradesInfoPath, cosmovisorPath); err != nil {
+	if err := copy.Copy(chainUpgradesInfoPath, cosmovisorPath); err != nil {
 		return fmt.Errorf("copy upgrades-info error %s", err)
 	}
 
@@ -113,74 +113,6 @@ func RemoveCosmovisor(logger *zerolog.Logger) error {
 
 	logger.Info().Str("path", cosmovisorPath).Msg("remove default cosmovisor")
 	return os.RemoveAll(cosmovisorPath)
-}
-
-func copyFile(src, dst string) error {
-	var err error
-	var srcfd *os.File
-	var dstfd *os.File
-	var srcinfo os.FileInfo
-
-	if srcfd, err = os.Open(src); err != nil {
-		return err
-	}
-	defer srcfd.Close()
-
-	if dstfd, err = os.Create(dst); err != nil {
-		return err
-	}
-	defer dstfd.Close()
-
-	if _, err = io.Copy(dstfd, srcfd); err != nil {
-		return err
-	}
-	if srcinfo, err = os.Stat(src); err != nil {
-		return err
-	}
-	return os.Chmod(dst, srcinfo.Mode())
-}
-
-func copyDir(src string, dst string) error {
-	var err error
-	var fds []os.FileInfo
-	var srcinfo os.FileInfo
-
-	if srcinfo, err = os.Stat(src); err != nil {
-		return err
-	}
-
-	if err = os.MkdirAll(dst, srcinfo.Mode()); err != nil {
-		return err
-	}
-
-	des, err := os.ReadDir(src)
-	if err != nil {
-		return err
-	}
-	fds = make([]fs.FileInfo, 0, len(des))
-	for _, de := range des {
-		info, err := de.Info()
-		if err != nil {
-			return err
-		}
-		fds = append(fds, info)
-	}
-
-	for _, fd := range fds {
-		srcfp := path.Join(src, fd.Name())
-		dstfp := path.Join(dst, fd.Name())
-
-		if fd.IsDir() {
-			if err = copyDir(srcfp, dstfp); err != nil {
-				return err
-			}
-		} else {
-			if err = copyFile(srcfp, dstfp); err != nil {
-				return err
-			}
-		}
-	}
-	return nil
 }
 
 func getChainId(homeDir string) (chainId string, err error) {
@@ -234,10 +166,10 @@ func ChooseVersion(logger *zerolog.Logger, cfg *Config) error {
 }
 
 func allUpgrades(logger *zerolog.Logger, cfg *Config) ([]upgradetypes.Plan, error) {
-	var plans = make([]upgradetypes.Plan, 0, 10)
-	var planExist = make(map[int64]bool, 10)
+	plans := make([]upgradetypes.Plan, 0, 10)
+	planExist := make(map[int64]bool, 10)
 
-	//cosmovisor upgrades
+	// cosmovisor upgrades
 	upgradePath := cfg.BaseUpgradeDir()
 	upgradeDirStat, err := os.Stat(upgradePath)
 	if err != nil {
@@ -255,12 +187,12 @@ func allUpgrades(logger *zerolog.Logger, cfg *Config) ([]upgradetypes.Plan, erro
 			logger.Warn().Str("version", fi.Name()).Str("path", filepath.Join(upgradePath, fi.Name())).Msg("invalid upgrades")
 			continue
 		}
-		//check upgrade bin
+		// check upgrade bin
 		upgradeBinPath := cfg.UpgradeBin(fi.Name())
 		if err := EnsureBinary(upgradeBinPath); err != nil {
 			return nil, err
 		}
-		//check upgrade info
+		// check upgrade info
 		upgradeInfoFilePath := filepath.Join(upgradePath, fi.Name(), upgradetypes.UpgradeInfoFilename)
 		upgradeInfoStat, err := os.Stat(upgradeInfoFilePath)
 		if err != nil {
@@ -282,7 +214,7 @@ func allUpgrades(logger *zerolog.Logger, cfg *Config) ([]upgradetypes.Plan, erro
 		}
 	}
 
-	//data upgrade-info
+	// data upgrade-info
 	dataUpgradeInfoFilePath := cfg.UpgradeInfoFilePath()
 	if dataUpgradeInfoStat, err := os.Stat(dataUpgradeInfoFilePath); err == nil {
 		if dataUpgradeInfoStat.IsDir() {
@@ -305,7 +237,7 @@ func allUpgrades(logger *zerolog.Logger, cfg *Config) ([]upgradetypes.Plan, erro
 		}
 	}
 
-	//reverse sort all upgrade by height
+	// reverse sort all upgrade by height
 	sort.Slice(plans, func(i, j int) bool {
 		return plans[i].Height > plans[j].Height
 	})
@@ -390,7 +322,7 @@ func symLinkToPlan(logger *zerolog.Logger, cfg *Config, plan upgradetypes.Plan) 
 	if _, err := os.Stat(current); err == nil {
 		oldLink, _ := os.Readlink(current)
 		if oldLink == newLink {
-			//not need create new symlink
+			// not need create new symlink
 			logger.Info().Msg("new symlink equal to old symlink")
 			return nil
 		}
