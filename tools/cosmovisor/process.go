@@ -68,9 +68,12 @@ func (l Launcher) Run(args []string, stdout, stderr io.Writer) (bool, error) {
 			if err := cmd.Process.Signal(sig); err != nil {
 				l.logger.Fatal().Err(err).Str("bin", bin).Msg("terminated")
 			}
-		case err := <-cmdDone:
+		case err, open := <-cmdDone:
 			if err != nil {
 				l.logger.Error().Err(err).Msg("run command done")
+			}
+			if open {
+				close(cmdDone)
 			}
 		}
 	}()
@@ -118,7 +121,11 @@ func (l Launcher) WaitForUpgradeOrExit(cmd *exec.Cmd, cmdDone chan error) (bool,
 		// upgrade - kill the process and restart
 		l.logger.Info().Msg("daemon shutting down in an attempt to restart")
 		_ = cmd.Process.Kill()
-	case err := <-cmdDone:
+	case err, open := <-cmdDone:
+		if open {
+			close(cmdDone)
+		}
+
 		l.fw.Stop()
 		// no error -> command exits normally (eg. short command like `gaiad version`)
 		if err == nil {
