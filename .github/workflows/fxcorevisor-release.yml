@@ -1,9 +1,9 @@
-name: Release Fxcorevisor
+name: Release fxcore cosmovisor
 
 on:
   push:
     tags:
-      - "fxcorevisor/v*.*.*"
+      - "fxcore/cosmovisor/v*.*.*"
 permissions:
   contents: read
 
@@ -19,10 +19,10 @@ jobs:
       - uses: actions/setup-go@v3
         with:
           go-version: 1.19
-      # get 'v*.*.*' part from 'fxcorevisor/v*.*.*' and save to $GITHUB_ENV
+      # get 'v*.*.*' part from 'fxcore/cosmovisor/v*.*.*' and save to $GITHUB_ENV
       - name: Set env
-        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/fxcorevisor/}" >> $GITHUB_ENV
-      # remove the possible pre-existing same tag for cosmos-sdk related tags instead of fxcorevisor tags
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/fxcore/cosmovisor/}" >> $GITHUB_ENV
+      # remove the possible pre-existing same tag for cosmos-sdk related tags instead of fxcore/cosmovisor tags
       # Because goreleaser enforces semantic versioning and will error on non compliant tags.(https://goreleaser.com/limitations/semver/)
       - name: Tag without prefix locally to avoid error in goreleaser
         run: |-
@@ -37,4 +37,4 @@ jobs:
           workdir: tools/cosmovisor
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GORELEASER_CURRENT_TAG: fxcorevisor/${{ env.RELEASE_VERSION }}
+          GORELEASER_CURRENT_TAG: cosmovisor/${{ env.RELEASE_VERSION }}
