@@ -1,0 +1,57 @@
+# compile cosmovisor
+FROM golang:1.18.2-alpine3.16 as builder
+
+RUN apk add --no-cache git build-base linux-headers
+
+WORKDIR /app
+
+COPY . .
+
+RUN go env -w GO111MODULE=on && cd /app/tools/cosmovisor && go mod download && make cosmovisor
+
+FROM functionx/fx-core:1.1.2 as fxv1
+
+FROM functionx/fx-core:2.4.2 as fxv2
+
+FROM functionx/fx-core:3.0.0 as fxv3
+
+# build fxcorevisor
+FROM alpine:3.16
+
+WORKDIR root
+
+ENV DAEMON_HOME=/root/.fxcore
+ENV DAEMON_NAME=fxcored
+
+# optional
+ENV DAEMON_ALLOW_DOWNLOAD_BINARIES=false
+ENV DAEMON_RESTART_AFTER_UPGRADE=true
+ENV DAEMON_RESTART_DELAY=1s
+ENV DAEMON_POLL_INTERVAL=3s
+ENV DAEMON_DATA_BACKUP_DIR=/root/.fxcore
+ENV UNSAFE_SKIP_BACKUP=true
+ENV DAEMON_PREUPGRADE_MAX_RETRIES=3
+
+ENV DAEMON_CHOOSE_VERSION=true
+ENV DAEMON_COSMOVISOR_REPLACE=true
+ENV DAEMON_BINARY_PATH=/cosmovisor/binary
+ENV DAEMON_UPGRADES_INFO_PATH=/cosmovisor/upgrades-info
+
+RUN mkdir -p /cosmovisor/binary/genesis/bin && \
+    mkdir -p /cosmovisor/binary/upgrades/fxv2/bin && \
+    mkdir -p /cosmovisor/binary/upgrades/fxv3/bin
+
+COPY --from=builder /app/tools/cosmovisor/upgrades-info/fxv2 /cosmovisor/upgrades-info
+COPY --from=builder /app/tools/cosmovisor/upgrades-info/fxv3 /cosmovisor/upgrades-info
+
+COPY --from=fxv1 /usr/bin/fxcored /cosmovisor/binary/genesis/bin
+COPY --from=fxv2 /usr/bin/fxcored /cosmovisor/binary/upgrades/fxv2/bin
+COPY --from=fxv3 /usr/bin/fxcored /cosmovisor/binary/upgrades/fxv3/bin
+
+COPY --from=builder /app/tools/cosmovisor/cosmovisor /usr/bin/cosmovisor
+
+EXPOSE 26656/tcp 26657/tcp 26660/tcp 9090/tcp 1317/tcp 8545/tcp 8546/tcp
+
+VOLUME ["/root"]
+
+ENTRYPOINT ["cosmovisor"]
