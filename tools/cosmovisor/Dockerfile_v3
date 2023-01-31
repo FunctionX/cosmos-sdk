@@ -13,7 +13,7 @@ FROM functionx/fx-core:1.1.2 as fxv1
 
 FROM functionx/fx-core:2.4.2 as fxv2
 
-FROM functionx/fx-core:3.0.0 as fxv3
+FROM functionx/fx-core:3.1.0 as fxv3
 
 # build fxcorevisor
 FROM alpine:3.16
