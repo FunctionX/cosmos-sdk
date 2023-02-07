@@ -234,6 +234,16 @@ func allUpgrades(logger *zerolog.Logger, cfg *Config) ([]upgradetypes.Plan, erro
 			if err := EnsureBinary(upgradeBinPath); err != nil {
 				return nil, fmt.Errorf("binary not found for %s plan", info.Name)
 			}
+
+			// copy upgrade info to upgrade-path/{plan.Name}/upgrade-info.json if file not exist
+			upgradeInfoFilePath := filepath.Join(upgradePath, info.Name, upgradekeeper.UpgradeInfoFileName)
+			if _, err = os.Stat(upgradeInfoFilePath); err != nil {
+				logger.Info().Int64("upgrade-height", info.Height).Str("name", info.Name).Str("dest", upgradeInfoFilePath).Msg("copy upgrade-info file to dest")
+				err = writeUpgradeInfo(upgradeInfoFilePath, info)
+				if err != nil {
+					return nil, fmt.Errorf("cannot not write file for %s plan", info.Name)
+				}
+			}
 		}
 	}
 
@@ -255,6 +265,14 @@ func parseUpgradeInfo(upgradeInfoFilePath string) (upgradetypes.Plan, error) {
 		return upgradetypes.Plan{}, fmt.Errorf("can not unmarshal file %s: %w", upgradeInfoFilePath, err)
 	}
 	return upgradeInfo, nil
+}
+
+func writeUpgradeInfo(upgradeInfoFilePath string, plan upgradetypes.Plan) error {
+	bz, err := json.Marshal(&plan)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(upgradeInfoFilePath, bz, 0o600)
 }
 
 func readTmCfg(homeDir string) (*config.Config, error) {
