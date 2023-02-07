@@ -236,7 +236,7 @@ func allUpgrades(logger *zerolog.Logger, cfg *Config) ([]upgradetypes.Plan, erro
 			}
 
 			// copy upgrade info to upgrade-path/{plan.Name}/upgrade-info.json if file not exist
-			upgradeInfoFilePath := filepath.Join(upgradePath, info.Name, upgradekeeper.UpgradeInfoFileName)
+			upgradeInfoFilePath := filepath.Join(upgradePath, info.Name, upgradetypes.UpgradeInfoFilename)
 			if _, err = os.Stat(upgradeInfoFilePath); err != nil {
 				logger.Info().Int64("upgrade-height", info.Height).Str("name", info.Name).Str("dest", upgradeInfoFilePath).Msg("copy upgrade-info file to dest")
 				err = writeUpgradeInfo(upgradeInfoFilePath, info)
@@ -259,7 +259,7 @@ func parseUpgradeInfo(upgradeInfoFilePath string) (upgradetypes.Plan, error) {
 	if err != nil {
 		return upgradetypes.Plan{}, fmt.Errorf("can not read file %s: %w", upgradeInfoFilePath, err)
 	}
-	//{"name":"fxv2","height":3418880}
+	// {"name":"fxv2","height":3418880}
 	upgradeInfo := upgradetypes.Plan{}
 	if err = json.Unmarshal(bz, &upgradeInfo); err != nil {
 		return upgradetypes.Plan{}, fmt.Errorf("can not unmarshal file %s: %w", upgradeInfoFilePath, err)
