@@ -10,12 +10,10 @@ COPY . .
 RUN go env -w GO111MODULE=on && cd /app/tools/cosmovisor && go mod download && make cosmovisor
 
 FROM functionx/fx-core:1.1.2 as fxv1
-
 FROM functionx/fx-core:2.4.2 as fxv2
-
 FROM functionx/fx-core:3.1.0 as fxv3
-
 FROM functionx/fx-core:4.0.0-rc1 as fxv4
+FROM functionx/fx-core:4.1.0-rc0 as fxv4_1
 
 # build fxcorevisor
 FROM alpine:3.16
@@ -42,16 +40,19 @@ ENV DAEMON_UPGRADES_INFO_PATH=/cosmovisor/upgrades-info
 RUN mkdir -p /cosmovisor/binary/genesis/bin && \
     mkdir -p /cosmovisor/binary/upgrades/fxv2/bin && \
     mkdir -p /cosmovisor/binary/upgrades/fxv3/bin && \
-    mkdir -p /cosmovisor/binary/upgrades/fxv4/bin
+    mkdir -p /cosmovisor/binary/upgrades/fxv4/bin && \
+    mkdir -p /cosmovisor/binary/upgrades/v4.1.x/bin
 
 COPY --from=builder /app/tools/cosmovisor/upgrades-info/fxv2 /cosmovisor/upgrades-info
 COPY --from=builder /app/tools/cosmovisor/upgrades-info/fxv3 /cosmovisor/upgrades-info
 COPY --from=builder /app/tools/cosmovisor/upgrades-info/fxv4 /cosmovisor/upgrades-info
+COPY --from=builder /app/tools/cosmovisor/upgrades-info/v4.1.x /cosmovisor/upgrades-info
 
 COPY --from=fxv1 /usr/bin/fxcored /cosmovisor/binary/genesis/bin
 COPY --from=fxv2 /usr/bin/fxcored /cosmovisor/binary/upgrades/fxv2/bin
 COPY --from=fxv3 /usr/bin/fxcored /cosmovisor/binary/upgrades/fxv3/bin
 COPY --from=fxv4 /usr/bin/fxcored /cosmovisor/binary/upgrades/fxv4/bin
+COPY --from=fxv4_1 /usr/bin/fxcored /cosmovisor/binary/upgrades/v4.1.x/bin
 
 COPY --from=builder /app/tools/cosmovisor/cosmovisor /usr/bin/cosmovisor
 
