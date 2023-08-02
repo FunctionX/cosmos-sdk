@@ -63,6 +63,9 @@ type Context struct {
 	streamingManager     storetypes.StreamingManager
 	cometInfo            comet.BlockInfo
 	headerInfo           header.Info
+
+	enablePreCheckTx bool
+	preCheckTx       bool
 }
 
 // Proposed rename, not done to avoid API breakage

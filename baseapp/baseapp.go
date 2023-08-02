@@ -770,7 +770,7 @@ func (app *BaseApp) runTx(mode execMode, txBytes []byte) (gInfo sdk.GasInfo, res
 	ms := ctx.MultiStore()
 
 	// only run the tx if there is block gas remaining
-	if mode == execModeFinalize && ctx.BlockGasMeter().IsOutOfGas() {
+	if isFinalized(mode) && ctx.BlockGasMeter().IsOutOfGas() {
 		return gInfo, nil, nil, errorsmod.Wrap(sdkerrors.ErrOutOfGas, "no block gas left to run tx")
 	}
 
@@ -804,7 +804,7 @@ func (app *BaseApp) runTx(mode execMode, txBytes []byte) (gInfo sdk.GasInfo, res
 	// NOTE: consumeBlockGas must exist in a separate defer function from the
 	// general deferred recovery function to recover from consumeBlockGas as it'll
 	// be executed first (deferred statements are executed as stack).
-	if mode == execModeFinalize {
+	if isFinalized(mode) {
 		defer consumeBlockGas()
 	}
 
@@ -870,7 +870,7 @@ func (app *BaseApp) runTx(mode execMode, txBytes []byte) (gInfo sdk.GasInfo, res
 		if err != nil {
 			return gInfo, nil, anteEvents, err
 		}
-	} else if mode == execModeFinalize {
+	} else if isFinalized(mode) {
 		err = app.mempool.Remove(tx)
 		if err != nil && !errors.Is(err, mempool.ErrTxNotFound) {
 			return gInfo, nil, anteEvents,
@@ -908,14 +908,14 @@ func (app *BaseApp) runTx(mode execMode, txBytes []byte) (gInfo sdk.GasInfo, res
 			result.Events = append(result.Events, newCtx.EventManager().ABCIEvents()...)
 		}
 
-		if mode == execModeFinalize {
+		if isFinalized(mode) {
 			// When block gas exceeds, it'll panic and won't commit the cached store.
 			consumeBlockGas()
 
 			msCache.Write()
 		}
 
-		if len(anteEvents) > 0 && (mode == execModeFinalize || mode == execModeSimulate) {
+		if len(anteEvents) > 0 && (isFinalized(mode) || mode == execModeSimulate) {
 			// append the events in the order of occurrence
 			result.Events = append(anteEvents, result.Events...)
 		}
@@ -931,11 +931,11 @@ func (app *BaseApp) runTx(mode execMode, txBytes []byte) (gInfo sdk.GasInfo, res
 // Result is returned. The caller must not commit state if an error is returned.
 func (app *BaseApp) runMsgs(ctx sdk.Context, msgs []sdk.Msg, msgsV2 []protov2.Message, mode execMode) (*sdk.Result, error) {
 	events := sdk.EmptyEvents()
-	var msgResponses []*codectypes.Any
+	msgResponses := make([]*codectypes.Any, 0, len(msgs))
 
 	// NOTE: GasWanted is determined by the AnteHandler and GasUsed by the GasMeter.
 	for i, msg := range msgs {
-		if mode != execModeFinalize && mode != execModeSimulate {
+		if mode != execModeFinalize && mode != execModeProcessProposal && mode != execModeSimulate {
 			break
 		}
 
@@ -950,23 +950,24 @@ func (app *BaseApp) runMsgs(ctx sdk.Context, msgs []sdk.Msg, msgsV2 []protov2.Me
 			return nil, errorsmod.Wrapf(err, "failed to execute message; message index: %d", i)
 		}
 
-		// create message events
-		msgEvents, err := createEvents(app.cdc, msgResult.GetEvents(), msg, msgsV2[i])
-		if err != nil {
-			return nil, errorsmod.Wrapf(err, "failed to create message events; message index: %d", i)
+		if !app.isSilenceEvents() {
+			// create message events
+			msgEvents, err := createEvents(app.cdc, msgResult.GetEvents(), msg, msgsV2[i])
+			if err != nil {
+				return nil, errorsmod.Wrapf(err, "failed to create message events; message index: %d", i)
+			}
+
+			// append message events and data
+			//
+			// Note: Each message result's data must be length-prefixed in order to
+			// separate each result.
+			for j, event := range msgEvents {
+				// append message index to all events
+				msgEvents[j] = event.AppendAttributes(sdk.NewAttribute("msg_index", strconv.Itoa(i)))
+			}
+
+			events = events.AppendEvents(msgEvents)
 		}
-
-		// append message events and data
-		//
-		// Note: Each message result's data must be length-prefixed in order to
-		// separate each result.
-		for j, event := range msgEvents {
-			// append message index to all events
-			msgEvents[j] = event.AppendAttributes(sdk.NewAttribute("msg_index", strconv.Itoa(i)))
-		}
-
-		events = events.AppendEvents(msgEvents)
-
 		// Each individual sdk.Result that went through the MsgServiceRouter
 		// (which should represent 99% of the Msgs now, since everyone should
 		// be using protobuf Msgs) has exactly one Msg response, set inside
@@ -1089,4 +1090,13 @@ func (app *BaseApp) Close() error {
 	}
 
 	return errors.Join(errs...)
+}
+
+func isFinalized(mode execMode) bool {
+	return mode == execModeFinalize || mode == execModeProcessProposal
+}
+
+func (app *BaseApp) isSilenceEvents() bool {
+	_, ok := app.indexEvents["SilenceEvents"]
+	return ok
 }
