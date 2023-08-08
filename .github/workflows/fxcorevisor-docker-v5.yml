@@ -1,0 +1,45 @@
+name: Build and Push Fxcorevisor image
+
+on:
+  push:
+    tags:
+      - "fxcorevisor/v5.*.*"
+
+jobs:
+  push_to_registries:
+    name: Push Docker image to ghcr
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+      contents: read
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v3
+
+      - name: Get Github tag
+        id: meta
+        run: |
+          echo "TAG=$(git describe --always --tags --match='fxcorevisor/v*'|awk '{split($1, arr, "/"); print arr[2]}' | sed -e 's/^v//')" >> $GITHUB_OUTPUT
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Login to Container registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push images
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: ./tools/cosmovisor/Dockerfile_v5
+          push: true
+          platforms: linux/amd64, linux/arm64
+          tags: |
+            ghcr.io/functionx/fxcorevisor:${{ steps.meta.outputs.TAG }}
