@@ -316,6 +316,9 @@ func StringifyEvents(events []abci.Event) StringEvents {
 // MarkEventsToIndex returns the set of ABCI events, where each event's attribute
 // has it's index value marked based on the provided set of events to index.
 func MarkEventsToIndex(events []abci.Event, indexSet map[string]struct{}) []abci.Event {
+	if _, ok := indexSet["SilenceEvents"]; ok {
+		return []abci.Event{}
+	}
 	indexAll := len(indexSet) == 0
 	updatedEvents := make([]abci.Event, len(events))
 
