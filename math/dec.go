@@ -18,7 +18,7 @@ type LegacyDec struct {
 
 const (
 	// number of decimal places
-	LegacyPrecision = 18
+	LegacyPrecision = 6
 
 	// bits required to represent the above precision
 	// Ceiling[Log2[10^Precision - 1]]
