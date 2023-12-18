@@ -201,6 +201,10 @@ func (k BaseSendKeeper) SubtractCoins(ctx sdk.Context, addr sdk.AccAddress, amt 
 		}
 	}
 
+	ctx.EventManager().EmitEvent(
+		types.NewCoinSpentEvent(addr, amt),
+	)
+
 	return nil
 }
 
@@ -221,6 +225,10 @@ func (k BaseSendKeeper) AddCoins(ctx sdk.Context, addr sdk.AccAddress, amt sdk.C
 			return err
 		}
 	}
+
+	ctx.EventManager().EmitEvent(
+		types.NewCoinReceivedEvent(addr, amt),
+	)
 
 	return nil
 }
