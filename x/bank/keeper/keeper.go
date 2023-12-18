@@ -112,6 +112,10 @@ func (k BaseKeeper) DelegateCoins(ctx sdk.Context, delegatorAddr, moduleAccAddr 
 		return sdkerrors.Wrap(err, "failed to track delegation")
 	}
 
+	ctx.EventManager().EmitEvent(
+		types.NewCoinSpentEvent(delegatorAddr, amt),
+	)
+
 	err := k.AddCoins(ctx, moduleAccAddr, amt)
 	if err != nil {
 		return err
@@ -351,6 +355,10 @@ func (k BaseKeeper) MintCoins(ctx sdk.Context, moduleName string, amt sdk.Coins)
 	logger := k.Logger(ctx)
 	logger.Info("minted coins from module account", "amount", amt.String(), "from", moduleName)
 
+	ctx.EventManager().EmitEvent(
+		types.NewCoinMintEvent(acc.GetAddress(), amt),
+	)
+
 	return nil
 }
 
@@ -378,6 +386,10 @@ func (k BaseKeeper) BurnCoins(ctx sdk.Context, moduleName string, amt sdk.Coins)
 
 	logger := k.Logger(ctx)
 	logger.Info("burned tokens from module account", "amount", amt.String(), "from", moduleName)
+
+	ctx.EventManager().EmitEvent(
+		types.NewCoinBurnEvent(acc.GetAddress(), amt),
+	)
 
 	return nil
 }
