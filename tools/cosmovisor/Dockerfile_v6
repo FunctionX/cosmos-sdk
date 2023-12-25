@@ -16,7 +16,7 @@ FROM functionx/fx-core:4.0.0-rc1 as fxv4
 FROM functionx/fx-core:4.1.0-rc0 as fxv4_1
 FROM functionx/fx-core:4.2.2 as fxv4_2
 FROM functionx/fx-core:5.0.0 as fxv5
-FROM functionx/fx-core:6.0.0-rc0 as fxv6
+FROM functionx/fx-core:6.0.0 as fxv6
 
 # build fxcorevisor
 FROM alpine:3.18
