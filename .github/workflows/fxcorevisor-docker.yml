@@ -3,7 +3,7 @@ name: Build and Push Fxcorevisor image
 on:
   push:
     tags:
-      - "fxcorevisor/v6.*.*"
+      - "fxcorevisor/v*.*.*"
 
 jobs:
   push_to_registries:
@@ -38,8 +38,18 @@ jobs:
         uses: docker/build-push-action@v3
         with:
           context: .
-          file: ./tools/cosmovisor/Dockerfile_v6
+          file: ./tools/cosmovisor/Dockerfile
           push: true
           platforms: linux/amd64, linux/arm64
           tags: |
             ghcr.io/functionx/fxcorevisor:${{ steps.meta.outputs.TAG }}
+
+      - name: Build and push lite images
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: ./tools/cosmovisor/Dockerfile_lite
+          push: true
+          platforms: linux/amd64, linux/arm64
+          tags: |
+            ghcr.io/functionx/fxcorevisor-lite:${{ steps.meta.outputs.TAG }}
