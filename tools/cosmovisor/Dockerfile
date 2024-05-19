@@ -18,6 +18,7 @@ FROM functionx/fx-core:4.2.2 as fxv4_2
 FROM functionx/fx-core:5.0.0 as fxv5
 FROM functionx/fx-core:6.0.0 as fxv6
 FROM functionx/fx-core:7.0.1-rc0 as fxv7
+FROM functionx/fx-core:7.1.0-rc1 as fxv7_1
 
 # build fxcorevisor
 FROM alpine:3.18
@@ -49,7 +50,8 @@ RUN mkdir -p /cosmovisor/binary/genesis/bin && \
     mkdir -p /cosmovisor/binary/upgrades/v4.2.x/bin && \
     mkdir -p /cosmovisor/binary/upgrades/v5.0.x/bin && \
     mkdir -p /cosmovisor/binary/upgrades/v6.0.x/bin && \
-    mkdir -p /cosmovisor/binary/upgrades/v7.0.x/bin
+    mkdir -p /cosmovisor/binary/upgrades/v7.0.x/bin && \
+    mkdir -p /cosmovisor/binary/upgrades/v7.1.x/bin
 
 COPY --from=builder /app/tools/cosmovisor/upgrades-info/fxv2 /cosmovisor/upgrades-info
 COPY --from=builder /app/tools/cosmovisor/upgrades-info/fxv3 /cosmovisor/upgrades-info
@@ -59,6 +61,7 @@ COPY --from=builder /app/tools/cosmovisor/upgrades-info/v4.2.x /cosmovisor/upgra
 COPY --from=builder /app/tools/cosmovisor/upgrades-info/v5.0.x /cosmovisor/upgrades-info
 COPY --from=builder /app/tools/cosmovisor/upgrades-info/v6.0.x /cosmovisor/upgrades-info
 COPY --from=builder /app/tools/cosmovisor/upgrades-info/v7.0.x /cosmovisor/upgrades-info
+COPY --from=builder /app/tools/cosmovisor/upgrades-info/v7.1.x /cosmovisor/upgrades-info
 
 COPY --from=fxv1 /usr/bin/fxcored /cosmovisor/binary/genesis/bin
 COPY --from=fxv2 /usr/bin/fxcored /cosmovisor/binary/upgrades/fxv2/bin
@@ -69,6 +72,7 @@ COPY --from=fxv4_2 /usr/bin/fxcored /cosmovisor/binary/upgrades/v4.2.x/bin
 COPY --from=fxv5 /usr/bin/fxcored /cosmovisor/binary/upgrades/v5.0.x/bin
 COPY --from=fxv6 /usr/bin/fxcored /cosmovisor/binary/upgrades/v6.0.x/bin
 COPY --from=fxv7 /usr/bin/fxcored /cosmovisor/binary/upgrades/v7.0.x/bin
+COPY --from=fxv7_1 /usr/bin/fxcored /cosmovisor/binary/upgrades/v7.1.x/bin
 
 COPY --from=builder /app/tools/cosmovisor/cosmovisor /usr/bin/cosmovisor
 
