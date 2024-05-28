@@ -9,11 +9,11 @@ COPY . .
 
 RUN go env -w GO111MODULE=on && cd /app/tools/cosmovisor && go mod download && make cosmovisor
 
-FROM functionx/fx-core:1.1.2 as fxv1
-FROM functionx/fx-core:2.4.2 as fxv2
-FROM functionx/fx-core:3.1.0 as fxv3
-FROM functionx/fx-core:4.0.0-rc1 as fxv4
-FROM functionx/fx-core:4.1.0-rc0 as fxv4_1
+FROM functionx/fx-core:1.1.4 as fxv1
+FROM functionx/fx-core:2.4.3 as fxv2
+FROM functionx/fx-core:3.1.1 as fxv3
+FROM functionx/fx-core:4.0.1-rc1 as fxv4
+FROM functionx/fx-core:4.1.1-rc0 as fxv4_1
 FROM functionx/fx-core:4.2.2 as fxv4_2
 FROM functionx/fx-core:5.0.0 as fxv5
 FROM functionx/fx-core:6.0.0 as fxv6
@@ -43,42 +43,20 @@ ENV DAEMON_COSMOVISOR_REPLACE=true
 ENV DAEMON_BINARY_PATH=/cosmovisor/binary
 ENV DAEMON_UPGRADES_INFO_PATH=/cosmovisor/upgrades-info
 
-RUN mkdir -p /cosmovisor/binary/genesis/bin && \
-    mkdir -p /cosmovisor/binary/upgrades/fxv2/bin && \
-    mkdir -p /cosmovisor/binary/upgrades/fxv3/bin && \
-    mkdir -p /cosmovisor/binary/upgrades/fxv4/bin && \
-    mkdir -p /cosmovisor/binary/upgrades/v4.1.x/bin && \
-    mkdir -p /cosmovisor/binary/upgrades/v4.2.x/bin && \
-    mkdir -p /cosmovisor/binary/upgrades/v5.0.x/bin && \
-    mkdir -p /cosmovisor/binary/upgrades/v6.0.x/bin && \
-    mkdir -p /cosmovisor/binary/upgrades/v7.0.x/bin && \
-    mkdir -p /cosmovisor/binary/upgrades/v7.1.x/bin && \
-    mkdir -p /cosmovisor/binary/upgrades/v7.2.x/bin
-
-COPY --from=builder /app/tools/cosmovisor/upgrades-info/fxv2 /cosmovisor/upgrades-info
-COPY --from=builder /app/tools/cosmovisor/upgrades-info/fxv3 /cosmovisor/upgrades-info
-COPY --from=builder /app/tools/cosmovisor/upgrades-info/fxv4 /cosmovisor/upgrades-info
-COPY --from=builder /app/tools/cosmovisor/upgrades-info/v4.1.x /cosmovisor/upgrades-info
-COPY --from=builder /app/tools/cosmovisor/upgrades-info/v4.2.x /cosmovisor/upgrades-info
-COPY --from=builder /app/tools/cosmovisor/upgrades-info/v5.0.x /cosmovisor/upgrades-info
-COPY --from=builder /app/tools/cosmovisor/upgrades-info/v6.0.x /cosmovisor/upgrades-info
-COPY --from=builder /app/tools/cosmovisor/upgrades-info/v7.0.x /cosmovisor/upgrades-info
-COPY --from=builder /app/tools/cosmovisor/upgrades-info/v7.1.x /cosmovisor/upgrades-info
-COPY --from=builder /app/tools/cosmovisor/upgrades-info/v7.2.x /cosmovisor/upgrades-info
-
-COPY --from=fxv1 /usr/bin/fxcored /cosmovisor/binary/genesis/bin
-COPY --from=fxv2 /usr/bin/fxcored /cosmovisor/binary/upgrades/fxv2/bin
-COPY --from=fxv3 /usr/bin/fxcored /cosmovisor/binary/upgrades/fxv3/bin
-COPY --from=fxv4 /usr/bin/fxcored /cosmovisor/binary/upgrades/fxv4/bin
-COPY --from=fxv4_1 /usr/bin/fxcored /cosmovisor/binary/upgrades/v4.1.x/bin
-COPY --from=fxv4_2 /usr/bin/fxcored /cosmovisor/binary/upgrades/v4.2.x/bin
-COPY --from=fxv5 /usr/bin/fxcored /cosmovisor/binary/upgrades/v5.0.x/bin
-COPY --from=fxv6 /usr/bin/fxcored /cosmovisor/binary/upgrades/v6.0.x/bin
-COPY --from=fxv7 /usr/bin/fxcored /cosmovisor/binary/upgrades/v7.0.x/bin
-COPY --from=fxv7_1 /usr/bin/fxcored /cosmovisor/binary/upgrades/v7.1.x/bin
-COPY --from=fxv7_2 /usr/bin/fxcored /cosmovisor/binary/upgrades/v7.2.x/bin
-
+COPY --from=builder /app/tools/cosmovisor/upgrades-info /cosmovisor/upgrades-info
 COPY --from=builder /app/tools/cosmovisor/cosmovisor /usr/bin/cosmovisor
+
+COPY --from=fxv1 /usr/bin/fxcored /cosmovisor/binary/genesis/bin/fxcored
+COPY --from=fxv2 /usr/bin/fxcored /cosmovisor/binary/upgrades/fxv2/bin/fxcored
+COPY --from=fxv3 /usr/bin/fxcored /cosmovisor/binary/upgrades/fxv3/bin/fxcored
+COPY --from=fxv4 /usr/bin/fxcored /cosmovisor/binary/upgrades/fxv4/bin/fxcored
+COPY --from=fxv4_1 /usr/bin/fxcored /cosmovisor/binary/upgrades/v4.1.x/bin/fxcored
+COPY --from=fxv4_2 /usr/bin/fxcored /cosmovisor/binary/upgrades/v4.2.x/bin/fxcored
+COPY --from=fxv5 /usr/bin/fxcored /cosmovisor/binary/upgrades/v5.0.x/bin/fxcored
+COPY --from=fxv6 /usr/bin/fxcored /cosmovisor/binary/upgrades/v6.0.x/bin/fxcored
+COPY --from=fxv7 /usr/bin/fxcored /cosmovisor/binary/upgrades/v7.0.x/bin/fxcored
+COPY --from=fxv7_1 /usr/bin/fxcored /cosmovisor/binary/upgrades/v7.1.x/bin/fxcored
+COPY --from=fxv7_2 /usr/bin/fxcored /cosmovisor/binary/upgrades/v7.2.x/bin/fxcored
 
 EXPOSE 26656/tcp 26657/tcp 26660/tcp 9090/tcp 1317/tcp 8545/tcp 8546/tcp
 
